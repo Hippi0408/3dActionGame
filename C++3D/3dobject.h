@@ -49,12 +49,12 @@ public:
 
 public:
 	C3DObject();
-	~C3DObject() override;
+	virtual ~C3DObject() override;
 
-	HRESULT Init() override;
-	void Uninit() override;
-	void Update() override;
-	void Draw() override;
+	virtual HRESULT Init() override;
+	virtual void Uninit() override;
+	virtual void Update() override;
+	virtual void Draw() override;
 	void Set3DObject(int nPattn, D3DXVECTOR3 pos);
 	D3DXVECTOR3 GetPos() { return m_Model.pos; }
 	void SetPos(D3DXVECTOR3 pos) { m_Model.pos = pos; }

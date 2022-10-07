@@ -12,8 +12,13 @@
 #include "game.h"
 #include "input.h"
 #include "manager.h"
-#include "ui.h"
+#include "camera.h"
+#include "light.h"
+#include "3dpolygon.h"
 #include "texture.h"
+#include "player.h"
+#include "3dobject.h"
+#include "billboard.h"
 
 //*****************************************************************************
 // コンストラクタ
@@ -34,23 +39,57 @@ CGame::~CGame()
 //*****************************************************************************
 HRESULT CGame::Init()
 {
-	m_pUi = nullptr;
-
-	m_pUi = new CUI;
-
-	if (FAILED(m_pUi->Init()))
+	//カメラ
+	m_pCamera = new CCamera;
+	if (FAILED(m_pCamera->Init()))
 	{
 		return -1;
 	}
 
-	C2DPolygon *pPolygon = m_pUi->CreateUi(1);
+	m_pCamera->SetPosV(D3DXVECTOR3(0.0f, 200.0f, -1000.0f));
+	m_pCamera->SetPosR(D3DXVECTOR3(0.0f, 0.0f, 0.0f));
+	m_pCamera->SetVecU(D3DXVECTOR3(0.0f, 1.0f, 0.0f));
 
+	//ライト
+	m_pLight = new CLight;
+	if (FAILED(m_pLight->Init()))
+	{
+		return -1;
+	}
+
+	//BG3D
+	m_pBG = new C3DPolygon;
+	if (FAILED(m_pBG->Init()))
+	{
+		return -1;
+	}
 	int nIndex = CTexture::LoadTexture("data/TEXTURE/ゲーム.png");
-	pPolygon[0].SetTextIndex(nIndex);
-	pPolygon[0].SetPos(D3DXVECTOR3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f));
-	pPolygon[0].SetDiagonalLine(200.0f, 200.0f);
-	pPolygon[0].SetPolygon();
+	m_pBG->SetPos(D3DXVECTOR3(0.0f, 0.0f, 0.0f));
+	m_pBG->SetRot(D3DXVECTOR3(D3DXToRadian(0), D3DXToRadian(0), D3DXToRadian(0)));
+	m_pBG->SetTextIndex(nIndex);
+	m_pBG->SetDiagonalLine(500.0f, 500.0f);
+	m_pBG->SetPolygon();
 
+	//Player
+	m_pPlayer = new CPlayer;
+	if (FAILED(m_pPlayer->Init()))
+	{
+		return -1;
+	}
+
+	m_pBillcoard = new CBillcoard;
+	if (FAILED(m_pBillcoard->Init()))
+	{
+		return -1;
+	}
+	nIndex = CTexture::LoadTexture("data/TEXTURE/陰陽玉.png");
+	m_pBillcoard->SetPos(D3DXVECTOR3(0.0f, 100.0f, 0.0f));
+	m_pBillcoard->SetRot(D3DXVECTOR3(D3DXToRadian(0), D3DXToRadian(0), D3DXToRadian(0)));
+	m_pBillcoard->SetTextIndex(nIndex);
+	m_pBillcoard->SetDiagonalLine(50.0f, 50.0f);
+	m_pBillcoard->SetPolygon();
+
+	return S_OK;
 }
 
 //*****************************************************************************
@@ -58,14 +97,45 @@ HRESULT CGame::Init()
 //*****************************************************************************
 void CGame::Uninit()
 {
-	//UI
-	if (m_pUi != nullptr)
+	//カメラ
+	if (m_pCamera != nullptr)
 	{
-		// 終了処理
-		m_pUi->Uninit();
-		delete m_pUi;
-		m_pUi = nullptr;
+		m_pCamera->Uninit();
+		delete m_pCamera;
+		m_pCamera = nullptr;
 	}
+	//ライト
+	if (m_pLight != nullptr)
+	{
+		m_pLight->Uninit();
+		delete m_pLight;
+		m_pLight = nullptr;
+	}
+	//3DBG
+	if (m_pBG != nullptr)
+	{
+		m_pBG->Uninit();
+		delete m_pBG;
+		m_pBG = nullptr;
+	}
+
+	//
+	if (m_pBillcoard != nullptr)
+	{
+		m_pBillcoard->Uninit();
+		delete m_pBillcoard;
+		m_pBillcoard = nullptr;
+	}
+
+	//Player
+	if (m_pPlayer != nullptr)
+	{
+		m_pPlayer->Uninit();
+		delete m_pPlayer;
+		m_pPlayer = nullptr;
+	}
+
+	C3DObject::UninitAllModel();
 }
 
 //*****************************************************************************
@@ -73,9 +143,38 @@ void CGame::Uninit()
 //*****************************************************************************
 void CGame::Update()
 {
-	m_pUi->Update();
-
+	m_pPlayer->Update();
 	CInput *pInput = CInput::GetKey();
+
+
+	if (pInput->Press(DIK_UP))
+	{
+		m_pCamera->AddPosV(D3DXVECTOR3(0.0f,0.0f,5.0f));
+	}
+	else if (pInput->Press(DIK_DOWN))
+	{
+		m_pCamera->AddPosV(D3DXVECTOR3(0.0f, 0.0f, -5.0f));
+	}
+
+	if (pInput->Press(DIK_LEFT))
+	{
+		m_pCamera->AddPosV(D3DXVECTOR3(-5.0f, 0.0f, 0.0f));
+	}
+	else if (pInput->Press(DIK_RIGHT))
+	{
+		m_pCamera->AddPosV(D3DXVECTOR3(5.0f, 0.0f, 0.0f));
+	}
+
+
+	if (pInput->Press(DIK_I))
+	{
+		m_pCamera->AddPosV(D3DXVECTOR3(0.0f, 5.0f, 0.0f));
+	}
+	else if (pInput->Press(DIK_K))
+	{
+		m_pCamera->AddPosV(D3DXVECTOR3(0.0f, -5.0f, 0.0f));
+	}
+
 
 	if (pInput->Trigger(KEY_DECISION))
 	{
@@ -89,6 +188,12 @@ void CGame::Update()
 //*****************************************************************************
 void CGame::Draw()
 {
-	//ＵＩ
-	m_pUi->Draw();
+	//カメラ
+	m_pCamera->SetCamera();
+
+	m_pBG->Draw();
+
+	m_pBillcoard->Draw();
+
+	m_pPlayer->Draw();
 }

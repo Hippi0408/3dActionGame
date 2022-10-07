@@ -18,11 +18,11 @@
 class C3DPolygon : public CObject
 {
 private:
+	static const float FLASHING_AMOUNT;
+public:
 	// 頂点フォーマット
 	static const DWORD FVF_VERTEX_3D = (D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_DIFFUSE | D3DFVF_TEX1);	//座標、法線、カラー 、テクスチャ
-	static const float FLASHING_AMOUNT;
 
-public:
 	C3DPolygon();//コンストラクタFlashing
 	virtual ~C3DPolygon() override;//デストラクタ
 
@@ -57,21 +57,26 @@ public:
 	void SetTextIndex(int nIndex) { m_nTextIndex = nIndex; }//このポリゴンが使用するテクスチャ番号のセット
 	int GetTextIndex() { return m_nTextIndex; }//このポリゴンが使用するテクスチャ番号の取得
 
-private:
+protected:
 	D3DXMATRIX m_MtxWorld;				//ワールドマトリックス
 	LPDIRECT3DVERTEXBUFFER9 m_pVtxBuff;//頂点バッファへのポインタ
+	float m_fWidth;//横幅
+	float m_fHeight;//縦幅
+	D3DXVECTOR2 m_UV;//UVの座標
+	D3DXVECTOR2 m_UVSize;//UVのサイズ
+	D3DXCOLOR m_Color;//色
+	int m_nTextIndex;//テクスチャ番号
+private:
+	
 	D3DXVECTOR3 m_Pos;//位置
 	D3DXVECTOR3 m_Rot;//向き
 	D3DXVECTOR3 m_Move;//移動量
 	D3DXVECTOR2 m_UVMove;//UVの移動量
-	D3DXVECTOR2 m_UV;//UVの座標
-	D3DXVECTOR2 m_UVSize;//UVのサイズ
+	
 
-	D3DXCOLOR m_Color;//色
+	
 
-	float m_fWidth;//横幅
-	float m_fHeight;//縦幅
-	int m_nTextIndex;//テクスチャ番号
+	
 	int m_nFlashingCnt;//点滅カウント
 	bool m_bFadeInOut;//フェード状態(true = in,false = out)
 

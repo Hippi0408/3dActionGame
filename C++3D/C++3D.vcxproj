@@ -156,6 +156,7 @@
     <ClCompile Include="3dpolygon.cpp" />
     <ClCompile Include="anim.cpp" />
     <ClCompile Include="beeline.cpp" />
+    <ClCompile Include="billboard.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="counter.cpp" />
     <ClCompile Include="DirectInput.cpp" />
@@ -176,12 +177,14 @@
     <ClCompile Include="number.cpp" />
     <ClCompile Include="object.cpp" />
     <ClCompile Include="pause.cpp" />
+    <ClCompile Include="player.cpp" />
     <ClCompile Include="ranking.cpp" />
     <ClCompile Include="rankinginput.cpp" />
     <ClCompile Include="read.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="result.cpp" />
     <ClCompile Include="result3dbg.cpp" />
+    <ClCompile Include="shadow.cpp" />
     <ClCompile Include="sound.cpp" />
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="time.cpp" />
@@ -196,6 +199,7 @@
     <ClInclude Include="3dpolygon.h" />
     <ClInclude Include="anim.h" />
     <ClInclude Include="beeline.h" />
+    <ClInclude Include="billboard.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="counter.h" />
     <ClInclude Include="DirectInput.h" />
@@ -217,6 +221,7 @@
     <ClInclude Include="number.h" />
     <ClInclude Include="object.h" />
     <ClInclude Include="pause.h" />
+    <ClInclude Include="player.h" />
     <ClInclude Include="ranking.h" />
     <ClInclude Include="rankinginput.h" />
     <ClInclude Include="read.h" />
@@ -224,6 +229,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="result.h" />
     <ClInclude Include="result3dbg.h" />
+    <ClInclude Include="shadow.h" />
     <ClInclude Include="sound.h" />
     <ClInclude Include="texture.h" />
     <ClInclude Include="time.h" />

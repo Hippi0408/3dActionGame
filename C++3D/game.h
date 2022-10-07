@@ -15,7 +15,11 @@
 //*****************************************************************************
 // 前方宣言
 //*****************************************************************************
-class CUI;
+class CCamera;
+class CLight;
+class C3DPolygon;
+class CPlayer;
+class CBillcoard;
 
 //*****************************************************************************
 // クラス定義
@@ -33,7 +37,11 @@ public:
 	void Update() override;
 	void Draw() override;
 private:
-	CUI *m_pUi;
+	CCamera* m_pCamera;
+	CLight* m_pLight;
+	C3DPolygon* m_pBG;
+	CPlayer* m_pPlayer;
+	CBillcoard* m_pBillcoard;
 };
 
 #endif
