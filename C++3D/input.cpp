@@ -12,6 +12,7 @@
 #include "DirectInput.h"
 #include "inputkeyboard.h"
 #include "inputjoypad.h"
+#include "inputmouse.h"
 
 //-----------------------------------------------------------------------------
 //静的メンバ変数宣言
@@ -25,6 +26,7 @@ CInput::CInput()
 {
 	m_pKeyboard = nullptr;		//キーボードの情報
 	m_pJoyPad = nullptr;		//ジョイパッドの情報
+	m_pMouse = nullptr;			//マウスの情報
 	m_nOldInputType = INPUT_TYPE_KEYBOARD;
 }
 
@@ -64,6 +66,15 @@ HRESULT CInput::Init(HINSTANCE hInstance, HWND hWnd)
 		return E_FAIL;
 	}
 
+	//マウスの生成
+	m_pMouse = new CInputMouse;
+
+	//マウスの初期化処理
+	if (FAILED(m_pMouse->Init(hInstance, hWnd)))
+	{
+		return E_FAIL;
+	}
+
 	return S_OK;
 }
 
@@ -88,6 +99,14 @@ void CInput::Uninit()
 		m_pJoyPad = nullptr;
 	}
 
+	//マウスの破棄
+	if (m_pMouse != nullptr)
+	{
+		m_pMouse->Uninit();
+		delete m_pMouse;
+		m_pMouse = nullptr;
+	}
+
 	//DirectInputオブジェクトの破棄
 	CDirectInput::Break();
 
@@ -108,6 +127,8 @@ void CInput::Update()
 	m_pKeyboard->Update();
 	//ジョイパッドの更新
 	m_pJoyPad->Update();
+	//マウスの更新
+	m_pMouse->Update();
 
 	//最後に触ったデバイス
 	if (m_pJoyPad->GetPressAll())
@@ -117,6 +138,10 @@ void CInput::Update()
 	else if (m_pKeyboard->GetKeyboardAllPress())
 	{
 		m_nOldInputType = INPUT_TYPE_KEYBOARD;
+	}
+	else if (m_pMouse->GetPressAll())
+	{
+		m_nOldInputType = INPUT_TYPE_MOUSE;
 	}
 }
 
@@ -245,6 +270,14 @@ bool CInput::Press(STAN_DART_INPUT_KEY key)
 			return true;
 		}
 		break;
+	case KEY_ALL:
+		if (m_pKeyboard->GetKeyboardAllPress()
+			|| m_pJoyPad->GetPressAll()
+			|| m_pMouse->GetPressAll())
+		{
+			return true;
+		}
+		break;
 	default:
 		break;
 	}
@@ -368,6 +401,14 @@ bool CInput::Trigger(STAN_DART_INPUT_KEY key)
 			return true;
 		}
 		break;
+	case KEY_ALL:
+		if (m_pKeyboard->GetKeyboardAllTrigger()
+			|| m_pJoyPad->GetTriggerAll()
+			|| m_pMouse->GetTriggerAll())
+		{
+			return true;
+		}
+		break;
 	default:
 		break;
 	}
@@ -392,6 +433,14 @@ bool CInput::Trigger(int nkey)
 }
 
 //*************************************************************************************
+//リリース処理(キーボード)
+//*************************************************************************************
+bool CInput::Release(int nkey)
+{
+	return m_pKeyboard->GetKeyboardRelease(nkey);
+}
+
+//*************************************************************************************
 //プレス処理(ジョイパッド)
 //*************************************************************************************
 bool CInput::Press(DirectJoypad key, int nNum)
@@ -405,6 +454,30 @@ bool CInput::Press(DirectJoypad key, int nNum)
 bool CInput::Trigger(DirectJoypad key, int nNum)
 {
 	return m_pJoyPad->GetTrigger(key, nNum);
+}
+
+//*************************************************************************************
+//プレス処理(マウス)
+//*************************************************************************************
+bool CInput::Press(MOUSE_KEY Key)
+{
+	return m_pMouse->GetPress(Key);
+}
+
+//*************************************************************************************
+//トリガー処理(マウス)
+//*************************************************************************************
+bool CInput::Trigger(MOUSE_KEY Key)
+{
+	return m_pMouse->GetTrigger(Key);
+}
+
+//*************************************************************************************
+//リリース処理(マウス)
+//*************************************************************************************
+bool CInput::Release(MOUSE_KEY Key)
+{
+	return m_pMouse->GetRelease(Key);
 }
 
 //*************************************************************************************
@@ -512,4 +585,28 @@ D3DXVECTOR3 CInput::VectorMoveJoyStickAll(bool bleftandright)
 	}
 
 	return VectorNull;
+}
+
+//*************************************************************************************
+// マウスカーソルのスクリーン座標の取得
+//*************************************************************************************
+D3DXVECTOR3 CInput::GetMouseCursor(void)
+{
+	return m_pMouse->GetMouseCursor();
+}
+
+//*************************************************************************************
+// マウスのホイールの動き処理
+//*************************************************************************************
+int CInput::GetMouseWheel(void)
+{
+	return m_pMouse->GetMouseWheel();
+}
+
+//*************************************************************************************
+// マウスの移動量を出力処理
+//*************************************************************************************
+D3DXVECTOR3 CInput::GetMouseMove(void)
+{
+	return m_pMouse->GetMouseMove();
 }

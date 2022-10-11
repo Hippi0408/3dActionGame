@@ -45,7 +45,7 @@ CManager::~CManager()
 HRESULT CManager::Init(HINSTANCE hInstance,HWND hWnd, bool bWindow)
 {
 	m_bChange = false;
-	m_Mode = TYPE_TITLE;
+	m_Mode = TYPE_GAME;
 	CTexture::Create();
 
 	//ƒTƒEƒ“ƒh‚Ì‰Šú‰»
@@ -66,7 +66,7 @@ HRESULT CManager::Init(HINSTANCE hInstance,HWND hWnd, bool bWindow)
 		return -1;
 	}
 
-	m_pGame = new CTitle;
+	m_pGame = new CGame;
 	if (FAILED(m_pGame->Init()))
 	{
 		return -1;

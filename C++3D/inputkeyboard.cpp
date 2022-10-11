@@ -83,8 +83,14 @@ void CInputKeyboard::Update(void)
 	{
 		for (nCntKey = 0; nCntKey < NUM_KEY_MAX; nCntKey++)
 		{
-			m_aKeyStateTrigger[nCntKey] = (m_aKeyState[nCntKey] ^ aKeyState[nCntKey]) & aKeyState[nCntKey]; //キーボードのトリガー情報を保存
-			m_aKeyState[nCntKey] = aKeyState[nCntKey];		//キーボードのプレス情報を保存
+			// マウストリガー情報を保存
+			m_aKeyStateTrigger[nCntKey] = ~m_aKeyState[nCntKey] & aKeyState[nCntKey];
+
+			// マウスリリース情報を保存
+			m_aKeyStateRelease[nCntKey] = m_aKeyState[nCntKey] & ~aKeyState[nCntKey];
+
+			//キーボードのプレス情報を保存
+			m_aKeyState[nCntKey] = aKeyState[nCntKey];		
 		}
 	}
 	else
@@ -102,6 +108,12 @@ bool CInputKeyboard::GetKeyboardPress(int nKey)
 bool CInputKeyboard::GetKeyboardTrigger(int nKey)
 {
 	return (m_aKeyStateTrigger[nKey] & 0x80) ? true : false;
+}
+
+//キーボードリリース処理
+bool CInputKeyboard::GetKeyboardRelease(int nKey)
+{
+	return (m_aKeyStateRelease[nKey] & 0x80) ? true : false;
 }
 //キーボード全キープレス処理
 bool CInputKeyboard::GetKeyboardAllPress(void)
@@ -121,6 +133,19 @@ bool CInputKeyboard::GetKeyboardAllTrigger(void)
 	for (int nCntKey = 0; nCntKey < NUM_KEY_MAX; nCntKey++)
 	{
 		if (GetKeyboardTrigger(nCntKey))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+//キーボード全キーリリース処理
+bool CInputKeyboard::GetKeyboardAllRelease(void)
+{
+	for (int nCntKey = 0; nCntKey < NUM_KEY_MAX; nCntKey++)
+	{
+		if (GetKeyboardRelease(nCntKey))
 		{
 			return true;
 		}

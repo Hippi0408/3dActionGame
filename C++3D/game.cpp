@@ -19,6 +19,7 @@
 #include "player.h"
 #include "3dobject.h"
 #include "billboard.h"
+#include "effect.h"
 
 //*****************************************************************************
 // コンストラクタ
@@ -89,6 +90,8 @@ HRESULT CGame::Init()
 	m_pBillcoard->SetDiagonalLine(50.0f, 50.0f);
 	m_pBillcoard->SetPolygon();
 
+	CEffect::InitTextIndex();
+
 	return S_OK;
 }
 
@@ -97,6 +100,8 @@ HRESULT CGame::Init()
 //*****************************************************************************
 void CGame::Uninit()
 {
+	CEffect::ALLUninit();
+
 	//カメラ
 	if (m_pCamera != nullptr)
 	{
@@ -136,6 +141,7 @@ void CGame::Uninit()
 	}
 
 	C3DObject::UninitAllModel();
+	
 }
 
 //*****************************************************************************
@@ -143,6 +149,7 @@ void CGame::Uninit()
 //*****************************************************************************
 void CGame::Update()
 {
+	CEffect::ALLUpdate();
 	m_pPlayer->Update();
 	CInput *pInput = CInput::GetKey();
 
@@ -175,6 +182,19 @@ void CGame::Update()
 		m_pCamera->AddPosV(D3DXVECTOR3(0.0f, -5.0f, 0.0f));
 	}
 
+	Effect effect;
+	effect.fAttenuation = -0.01f;
+	effect.fSizeX = 100.0f;
+	effect.fSizeY = 100.0f;
+	effect.nLife = 60;
+	effect.fScaleDown = -2.0f;
+	effect.nTextIndex = 0;
+	effect.pos = pInput->GetMouseCursor();
+	effect.Color = D3DXCOLOR(0.6f, 0.3f, 0.3f, 1.0f);
+	effect.move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	effect.bAddColor = true;
+	CEffect::CreateEffect(effect);
+
 
 	if (pInput->Trigger(KEY_DECISION))
 	{
@@ -193,7 +213,9 @@ void CGame::Draw()
 
 	m_pBG->Draw();
 
+	m_pPlayer->Draw();
+
 	m_pBillcoard->Draw();
 
-	m_pPlayer->Draw();
+	CEffect::ALLDraw();
 }

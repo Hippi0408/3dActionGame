@@ -13,8 +13,9 @@
 #include "manager.h"
 #include "texture.h"
 
-CEffect *CEffect::m_pEffect[EFFECT_MAX] = {};
-int CEffect::m_nEffectTextIndex = 0;
+int CEffect::m_nEffectTextIndexAll = 0;
+CEffect *CEffect::m_pEffectTop = nullptr;
+CEffect *CEffect::m_pEffectCurrent = nullptr;
 //*****************************************************************************
 // コンストラクタ
 //*****************************************************************************
@@ -24,6 +25,22 @@ CEffect::CEffect()
 	m_fScaleDown = 0.0f;
 	m_nLife = 0;
 	m_bAddColor = false;
+
+	if (m_pEffectTop == nullptr)
+	{
+		m_pEffectTop = this;
+	}
+
+	m_pNextEffect = nullptr;
+
+	m_pLastTimeEffect = GetCurrentEffect();
+
+	if (m_pLastTimeEffect != nullptr)
+	{
+		m_pLastTimeEffect->SetNextEffect(this);
+
+	}
+	SetCurrentEffect(this);
 }
 
 //*****************************************************************************
@@ -42,6 +59,7 @@ HRESULT CEffect::Init()
 	{
 		return -1;
 	}
+
 	return S_OK;
 }
 
@@ -50,7 +68,29 @@ HRESULT CEffect::Init()
 //*****************************************************************************
 void CEffect::Uninit()
 {
+	if(m_pEffectTop == this)
+	{
+		m_pEffectTop = m_pNextEffect;
+	}
+	
+	if (m_pEffectCurrent == this)
+	{
+		m_pEffectCurrent = m_pLastTimeEffect;
+	}
+
+	if (m_pLastTimeEffect != nullptr)
+	{
+		m_pLastTimeEffect->SetNextEffect(m_pNextEffect);
+	}
+
+	if (m_pNextEffect != nullptr)
+	{
+		m_pNextEffect->SetLastTimeEffect(m_pLastTimeEffect);
+	}
+
 	C2DPolygon::Uninit();
+
+	delete this;
 }
 
 //*****************************************************************************
@@ -153,12 +193,14 @@ void CEffect::SetEffect(const Effect effect)
 
 	if (effect.nTextIndex == 0)
 	{
-		SetTextIndex(m_nEffectTextIndex);
+		m_nEffectTextIndex = m_nEffectTextIndexAll;
 	}
 	else
 	{
-		SetTextIndex(effect.nTextIndex);
+		m_nEffectTextIndex = effect.nTextIndex;
 	}
+
+	SetTextIndex(m_nEffectTextIndex);
 	SetUp(effect.pos, effect.rot, effect.move);
 	SetColor(effect.Color);
 	SetPolygon();
@@ -169,35 +211,24 @@ void CEffect::SetEffect(const Effect effect)
 //*****************************************************************************
 void CEffect::CreateEffect(const Effect effect)
 {
-	for (int nCnt = 0; nCnt < EFFECT_MAX; nCnt++)
+
+	CEffect* pEffect = new CEffect;
+
+	if (FAILED(pEffect->Init()))
 	{
-		if (m_pEffect[nCnt] != nullptr)
-		{
-			continue;
-		}
-
-		m_pEffect[nCnt] = new CEffect;
-
-		if (FAILED(m_pEffect[nCnt]->Init()))
-		{
-			return;
-		}
-
-		m_pEffect[nCnt]->SetEffect(effect);
-
-		break;
+		return;
 	}
 
+	pEffect->SetEffect(effect);
 
 }
 
 //*****************************************************************************
-// ALL初期化
+// 初期テクスチャの設定
 //*****************************************************************************
-void CEffect::ALLInit()
+void CEffect::InitTextIndex()
 {
-	m_nEffectTextIndex = CTexture::LoadTexture("data/TEXTURE/effect.jpg");
-	ZeroMemory(m_pEffect, sizeof(m_pEffect));
+	m_nEffectTextIndexAll = CTexture::LoadTexture("data/TEXTURE/effect.jpg");
 }
 
 //*****************************************************************************
@@ -205,15 +236,13 @@ void CEffect::ALLInit()
 //*****************************************************************************
 void CEffect::ALLUninit()
 {
-	for (int nCnt = 0; nCnt < EFFECT_MAX; nCnt++)
+	CEffect* pEffect = m_pEffectTop;
+
+	while (pEffect != nullptr)
 	{
-		if (m_pEffect[nCnt] != nullptr)
-		{
-			// 終了処理
-			m_pEffect[nCnt]->Uninit();
-			delete m_pEffect[nCnt];
-			m_pEffect[nCnt] = nullptr;
-		}
+		CEffect* pEffectNext = pEffect->GetNextEffect();
+		pEffect->Uninit();
+		pEffect = pEffectNext;
 	}
 }
 
@@ -222,22 +251,23 @@ void CEffect::ALLUninit()
 //*****************************************************************************
 void CEffect::ALLUpdate()
 {
-	for (int nCnt = 0; nCnt < EFFECT_MAX; nCnt++)
-	{
-		if (m_pEffect[nCnt] == nullptr)
-		{
-			continue;
-		}
-		// 更新処理
-		m_pEffect[nCnt]->Update();
-		if (m_pEffect[nCnt]->IsUnused())
-		{
-			// 終了処理
-			m_pEffect[nCnt]->Uninit();
-			delete m_pEffect[nCnt];
-			m_pEffect[nCnt] = nullptr;
-		}
+	CEffect* pEffect = m_pEffectTop;
 
+	while (pEffect != nullptr)
+	{
+		pEffect->Update();
+		//pEffect = pEffect->GetNextEffect();
+
+		if (pEffect->IsUnused())
+		{
+			CEffect* pEffectBreak = pEffect;
+			pEffect = pEffectBreak->GetNextEffect();
+			pEffectBreak->Uninit();
+		}
+		else
+		{
+			pEffect = pEffect->GetNextEffect();
+		}
 	}
 }
 
@@ -246,12 +276,11 @@ void CEffect::ALLUpdate()
 //*****************************************************************************
 void CEffect::ALLDraw()
 {
-	for (int nCnt = 0; nCnt < EFFECT_MAX; nCnt++)
+	CEffect* pEffect = m_pEffectTop;
+
+	while (pEffect != nullptr)
 	{
-		if (m_pEffect[nCnt] != nullptr)
-		{
-			// 描画処理
-			m_pEffect[nCnt]->Draw();
-		}
+		pEffect->Draw();
+		pEffect = pEffect->GetNextEffect();
 	}
 }

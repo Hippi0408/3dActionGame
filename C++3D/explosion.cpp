@@ -81,7 +81,7 @@ void CExplosion::Uninit()
 void CExplosion::CreateExplosion(D3DXVECTOR3 pos)
 {
 
-	CEffect::Effect effect;
+	Effect effect;
 
 	for (int nCnt = 0; nCnt < 9; nCnt++)
 	{

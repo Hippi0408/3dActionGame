@@ -29,6 +29,7 @@ enum STAN_DART_INPUT_KEY
 	KEY_SHIFT,			//シフト		 シフト左右									L1
 	KEY_MOVE,			//移動系すべて
 	KEY_PAUSE,			//ポーズボタン	 P											START
+	KEY_ALL,			//全てのキー
 	KEY_MAX
 };
 
@@ -78,7 +79,21 @@ enum InputType
 {
 	INPUT_TYPE_KEYBOARD = 0,
 	INPUT_TYPE_JOYPAD,
+	INPUT_TYPE_MOUSE,
 	INPUT_TYPE_MAX
+};
+
+//キー種類(マウス)
+enum MOUSE_KEY
+{
+	MOUSE_INPUT_LEFT,			//マウス左ボタン
+	MOUSE_INPUT_RIGHT,			//マウス右ボタン
+	MOUSE_INPUT_MIDDLE,			//マウス中央ボタン
+	MOUSE_INPUT_4,				//マウスボタン4
+	MOUSE_INPUT_5,				//マウスボタン5
+	MOUSE_INPUT_6,				//マウスボタン6
+	MOUSE_INPUT_7,				//マウスボタン7
+	MOUSE_INPUT_8,				//マウスボタン8
 };
 
 #endif
