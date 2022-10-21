@@ -11,8 +11,10 @@
 #include "player.h"
 #include "input.h"
 #include "read.h"
-#include "shadow.h"
 #include "texture.h"
+#include "game.h"
+#include "camera.h"
+#include "meshfield.h"
 
 const D3DXVECTOR3 CPlayer::INIT_POS = D3DXVECTOR3(0.0f,0.0f,0.0f);
 //*****************************************************************************
@@ -49,20 +51,6 @@ HRESULT CPlayer::Init()
 	cRead.ReadXFile("data/MODEL/箱人02.x", &modelPattern);
 	SetModel(&modelPattern);
 
-	m_pShadow = new CShadow;
-
-	if (FAILED(m_pShadow->Init()))
-	{
-		return -1;
-	}
-	int nIndex = CTexture::LoadTexture("data/TEXTURE/effect.jpg");
-	m_pShadow->SetPos(D3DXVECTOR3(0.0f, 3.0f, 0.0f));
-	m_pShadow->SetRot(D3DXVECTOR3(D3DXToRadian(0), D3DXToRadian(0), D3DXToRadian(0)));
-	m_pShadow->SetTextIndex(nIndex);
-	m_pShadow->SetDiagonalLine(25.0f, 25.0f);
-	m_pShadow->SetPolygon();
-
-
 
 	return S_OK;
 }
@@ -72,12 +60,7 @@ HRESULT CPlayer::Init()
 //*****************************************************************************
 void CPlayer::Uninit()
 {
-	if (m_pShadow != nullptr)
-	{
-		m_pShadow->Uninit();
-		delete m_pShadow;
-		m_pShadow = nullptr;
-	}
+	
 }
 
 //*****************************************************************************
@@ -85,34 +68,101 @@ void CPlayer::Uninit()
 //*****************************************************************************
 void CPlayer::Update()
 {
-
-
 	CInput *pInput = CInput::GetKey();
+	CManager *pManager = GetManager();
 
+	CGame* pGame = (CGame*)pManager->GetGameObject();
+
+	float rotY = pGame->GetCamera()->GetRot();
+
+	D3DXVECTOR3 add = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+
+	//視点移動
 	if (pInput->Press(DIK_W))
-	{
-		AddPos(D3DXVECTOR3(0.0f,0.0f,10.0f));
+	{//上キーが押された
+		if (pInput->Press(DIK_A))
+		{
+			add.x -= sinf(rotY + D3DX_PI * 0.75f);
+			add.z -= cosf(rotY + D3DX_PI * 0.75f);
+		}
+		else if (pInput->Press(DIK_D))
+		{
+			add.x -= sinf(rotY + D3DX_PI * -0.75f);
+			add.z -= cosf(rotY + D3DX_PI * -0.75f);
+		}
+		else
+		{
+			add.x += sinf(rotY);
+			add.z += cosf(rotY);
+		}
 	}
 	else if (pInput->Press(DIK_S))
-	{
-		AddPos(D3DXVECTOR3(0.0f, 0.0f, -10.0f));
+	{//下キーが押された
+		if (pInput->Press(DIK_A))
+		{
+			add.x -= sinf(rotY + D3DX_PI * 0.25f);
+			add.z -= cosf(rotY + D3DX_PI * 0.25f);
+		}
+		else if (pInput->Press(DIK_D))
+		{
+			add.x -= sinf(rotY + D3DX_PI * -0.25f);
+			add.z -= cosf(rotY + D3DX_PI * -0.25f);
+		}
+		else
+		{
+			add.x += sinf(rotY + D3DX_PI);
+			add.z += cosf(rotY + D3DX_PI);
+		}
 	}
-
-	if (pInput->Press(DIK_A))
-	{
-		AddPos(D3DXVECTOR3(-10.0f, 0.0f, 0.0f));
+	else if (pInput->Press(DIK_A))
+	{//左キーが押された
+		add.x += sinf(rotY + D3DX_PI * -0.5f);
+		add.z += cosf(rotY + D3DX_PI * -0.5f);
 	}
 	else if (pInput->Press(DIK_D))
-	{
-		AddPos(D3DXVECTOR3(10.0f, 0.0f, 0.0f));
+	{//右キーが押された
+		add.x += sinf(rotY + D3DX_PI * 0.5f);
+		add.z += cosf(rotY + D3DX_PI * 0.5f);
 	}
 
-	D3DXVECTOR3 pos = GetPos();
+	if (pInput->Trigger(DIK_SPACE))
+	{
+		AddPos(D3DXVECTOR3(0.0f,100.0f,0.0f));
+	}
 
-	pos.y = 3.0f;
+	if (pInput->Press(DIK_Z))
+	{
+		AddRot(D3DXVECTOR3(0.0f, D3DXToRadian(-10), 0.0f));
+	}
+	else if (pInput->Press(DIK_X))
+	{
+		AddRot(D3DXVECTOR3(0.0f, D3DXToRadian(10), 0.0f));
+	}
 
-	m_pShadow->SetPos(pos);
+	AddPos(add * 5.0f);
 
+	add.y = -4.0f;
+
+	AddPos(add);
+
+	D3DXVECTOR3 pos, groundpos;
+
+	pos = GetPos();
+
+	groundpos = pGame->GetMeshfield()->Collision(pos);
+
+	if (pos.y < groundpos.y)
+	{
+		if (groundpos != D3DXVECTOR3(0.0f, 0.0f, 0.0f))
+		{
+			SetPos(groundpos);
+		}
+	}
+
+	if (groundpos != D3DXVECTOR3(0.0f, 0.0f, 0.0f))
+	{
+		SetShadowPos(groundpos);
+	}
 }
 
 //*****************************************************************************
@@ -120,7 +170,6 @@ void CPlayer::Update()
 //*****************************************************************************
 void CPlayer::Draw()
 {
-	m_pShadow->Draw();
 
 	C3DObject::Draw();
 }

@@ -35,7 +35,6 @@ public:
 
 private:
 
-	CShadow* m_pShadow;
 };
 
 #endif

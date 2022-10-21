@@ -135,10 +135,13 @@
     <ClCompile Include="billboard.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="shadow.cpp">
+    <ClCompile Include="inputmouse.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="inputmouse.cpp">
+    <ClCompile Include="meshfield.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="motion_parts.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -269,11 +272,14 @@
     <ClInclude Include="billboard.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="shadow.h">
+    <ClInclude Include="inputmouse.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inputmouse.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="meshfield.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="motion_parts.h">
+      <Filter>ソース ファイル</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

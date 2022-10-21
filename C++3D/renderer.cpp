@@ -65,8 +65,11 @@ HRESULT CRenderer::Init(HWND hWnd, bool bWindow)
 		return E_FAIL;
 	}
 
-	//レンダーステートの設定D3DCULL_CCW
-	m_pD3DDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+
+	//D3DCULL_NONE = カリング無し　D3DCULL_CCW = カリングあり
+	//レンダーステートの設定
+	//m_pD3DDevice->SetRenderState(D3DRS_FILLMODE, D3DFILL_WIREFRAME);
+	m_pD3DDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
 	m_pD3DDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
 	m_pD3DDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
 	m_pD3DDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);

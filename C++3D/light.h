@@ -31,6 +31,8 @@ public:
 	void Update() override;
 	void Draw() override;
 
+	D3DXVECTOR3 GetLightVec();
+
 private:
 	D3DLIGHT9 m_alight[LIGHT_MAX];//ƒ‰ƒCƒg‚Ìî•ñ
 

@@ -102,6 +102,58 @@ void C3DObject::Draw()
 	//モデルのマトリックス　＊　親のワールドマトリックス
 	D3DXMatrixMultiply(&m_Model.mtxWorld, &m_Model.mtxWorld, &mtxRoot);
 
+	//影をつける
+	if (m_LightVec != D3DXVECTOR3(0.0f, 0.0f, 0.0f))
+	{
+		D3DXMATRIX mtxShadow;
+		D3DXPLANE pIaneField;
+		D3DXVECTOR4 vecLight;
+		D3DXVECTOR3 pos, normal;
+
+		pos = m_ShadowPos;
+		normal = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
+		
+		vecLight = D3DXVECTOR4(m_LightVec.x, m_LightVec.y, m_LightVec.z,0.0f) * -1.0f;
+
+		D3DXPlaneFromPointNormal(&pIaneField, &pos, &normal);
+
+		D3DXMatrixShadow(&mtxShadow, &vecLight, &pIaneField);
+
+		D3DXMatrixMultiply(&mtxShadow, &m_Model.mtxWorld, &mtxShadow);
+
+		//ワールドマトリックスの設定
+		pD3DDevice->SetTransform(D3DTS_WORLD, &mtxShadow);
+
+		//現在のマテリアルを保存
+		pD3DDevice->GetMaterial(&matDef);
+
+		//マテリアルデータへのポインタを取得
+		pMat = (D3DXMATERIAL*)m_ModelPattern[m_Model.nPattn].pBuffMatModel->GetBufferPointer();
+
+		//テクスチャの設定
+		pD3DDevice->SetTexture(0, NULL);
+
+		for (int nCntMat = 0; nCntMat < (int)m_ModelPattern[m_Model.nPattn].nNumMatModel; nCntMat++)
+		{
+
+			pMat[nCntMat].MatD3D.Diffuse = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+
+			pMat[nCntMat].MatD3D.Emissive = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+
+			//マテリアルの設定
+			pD3DDevice->SetMaterial(&pMat[nCntMat].MatD3D);
+
+			// テクスチャの設定
+			pD3DDevice->SetTexture(0, m_ModelPattern[m_Model.nPattn].pTexture[nCntMat]);
+
+			//モデルパーツの描画
+			m_ModelPattern[m_Model.nPattn].pMeshModel->DrawSubset(nCntMat);
+		}
+
+		//保存していたマテリアルを戻す
+		pD3DDevice->SetMaterial(&matDef);
+
+	}
 
 	//ワールドマトリックスの設定
 	pD3DDevice->SetTransform(D3DTS_WORLD, &m_Model.mtxWorld);
@@ -117,6 +169,8 @@ void C3DObject::Draw()
 
 	for (int nCntMat = 0; nCntMat < (int)m_ModelPattern[m_Model.nPattn].nNumMatModel; nCntMat++)
 	{
+		pMat[nCntMat].MatD3D.Diffuse = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+
 		//マテリアルの設定
 		pD3DDevice->SetMaterial(&pMat[nCntMat].MatD3D);
 
@@ -247,6 +301,19 @@ void C3DObject::UninitAllModel()
 	}
 
 	ZeroMemory(&m_ModelPattern, sizeof(m_ModelPattern));
+}
+
+//*****************************************************************************
+// このモデルのワールド座標
+//*****************************************************************************
+D3DXVECTOR3 C3DObject::GetWorldPos()
+{
+	D3DXVECTOR3 pos;
+	pos.x = m_Model.mtxWorld._41;
+	pos.y = m_Model.mtxWorld._42;
+	pos.z = m_Model.mtxWorld._43;
+
+	return pos;
 }
 
 //*****************************************************************************

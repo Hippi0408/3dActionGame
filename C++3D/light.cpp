@@ -49,11 +49,11 @@ HRESULT CLight::Init(void)
 
 	//ライトの拡散光を設定
 	m_alight[0].Diffuse = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
-	m_alight[1].Diffuse = D3DXCOLOR(0.5f, 0.5f, 0.5f, 1.0f);
+	m_alight[1].Diffuse = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 	m_alight[2].Diffuse = D3DXCOLOR(0.5f, 0.5f, 0.5f, 1.0f);
 
 	//ライトの位置
-	m_alight[0].Position = D3DXVECTOR3(0.0f, 70.0f, -100.0f);
+	m_alight[0].Position = D3DXVECTOR3(100.0f, 70.0f, 0.0f);
 	m_alight[1].Position = D3DXVECTOR3(100.0f, 70.0f, 0.0f);
 	m_alight[2].Position = D3DXVECTOR3(-100.0f, 70.0f, 0.0f);
 
@@ -74,14 +74,14 @@ HRESULT CLight::Init(void)
 
 	//ライトを設定する
 	pD3DDevice->SetLight(0, &m_alight[0]);
-	pD3DDevice->SetLight(1, &m_alight[1]);
-	pD3DDevice->SetLight(2, &m_alight[2]);
+	//pD3DDevice->SetLight(1, &m_alight[1]);
+	//pD3DDevice->SetLight(2, &m_alight[2]);
 
 	//ライトを有効にする
 	pD3DDevice->LightEnable(0, TRUE);
-	pD3DDevice->LightEnable(1, TRUE);
-	pD3DDevice->LightEnable(2, TRUE);
-
+	//pD3DDevice->LightEnable(1, TRUE);
+	//pD3DDevice->LightEnable(2, TRUE);
+	//pD3DDevice->SetRenderState( );
 	return S_OK;
 }
 
@@ -114,4 +114,17 @@ void CLight::Update(void)
 //*****************************************************************************
 void CLight::Draw()
 {
+}
+
+//*****************************************************************************
+//ライトのベクトル
+//*****************************************************************************
+D3DXVECTOR3 CLight::GetLightVec()
+{
+	D3DXVECTOR3 vec = D3DXVECTOR3(0.0f, 0.0f, 0.0f) - m_alight[0].Position;
+
+	//正規化
+	D3DXVec3Normalize(&vec,&vec);
+
+	return vec;
 }

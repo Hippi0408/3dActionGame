@@ -100,3 +100,12 @@ void CCamera::SetCamera()
 	//プロジェクションマトリックスの設定
 	pD3DDevice->SetTransform(D3DTS_PROJECTION, &m_Camera.mtxProjection);
 }
+
+float CCamera::GetRot()
+{
+	D3DXVECTOR3 vec = m_Camera.posR - m_Camera.posV;
+
+	float fAngle = atan2f(vec.x, vec.z);
+
+	return fAngle;
+}

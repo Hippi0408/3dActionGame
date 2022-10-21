@@ -22,8 +22,8 @@
 class C3DObject : public CObject
 {
 public:
-	static const int MODEL_MAX_TEXTURE = 20;
-	static const int MODEL_PATTERN_MAX = 20;
+	static const int MODEL_MAX_TEXTURE = 30;
+	static const int MODEL_PATTERN_MAX = 30;
 
 	//モデルパターン構造体
 	typedef struct
@@ -60,8 +60,12 @@ public:
 	void SetPos(D3DXVECTOR3 pos) { m_Model.pos = pos; }
 	void AddPos(D3DXVECTOR3 add) { m_Model.pos += add; }
 	void SetRot(D3DXVECTOR3 rot) { m_Model.rot = rot; }
+	D3DXVECTOR3 GetRot() { return m_Model.rot; }
 	void AddRot(D3DXVECTOR3 add) { m_Model.rot += add; }
 	void SetSize(float fSize) { m_fSize = fSize; }
+	void SetLightVec(D3DXVECTOR3 LightVec) { m_LightVec = LightVec; }
+	void SetShadowPos(D3DXVECTOR3 shadowpos) { m_ShadowPos = shadowpos; }
+	D3DXVECTOR3 GetWorldPos();
 
 	D3DXVECTOR3 GetSize();
 
@@ -71,7 +75,9 @@ public:
 private:
 	static ModelPattern m_ModelPattern[MODEL_PATTERN_MAX];
 	Model m_Model;
-	float m_fSize;						//サイズ
+	float m_fSize;//サイズ
+	D3DXVECTOR3 m_LightVec = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	D3DXVECTOR3 m_ShadowPos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 };
 
 #endif

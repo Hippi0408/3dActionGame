@@ -72,11 +72,6 @@ private:
 	D3DXVECTOR3 m_Rot;//向き
 	D3DXVECTOR3 m_Move;//移動量
 	D3DXVECTOR2 m_UVMove;//UVの移動量
-	
-
-	
-
-	
 	int m_nFlashingCnt;//点滅カウント
 	bool m_bFadeInOut;//フェード状態(true = in,false = out)
 

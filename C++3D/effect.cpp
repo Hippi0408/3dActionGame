@@ -256,8 +256,7 @@ void CEffect::ALLUpdate()
 	while (pEffect != nullptr)
 	{
 		pEffect->Update();
-		//pEffect = pEffect->GetNextEffect();
-
+		
 		if (pEffect->IsUnused())
 		{
 			CEffect* pEffectBreak = pEffect;

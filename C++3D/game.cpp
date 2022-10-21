@@ -20,6 +20,7 @@
 #include "3dobject.h"
 #include "billboard.h"
 #include "effect.h"
+#include "meshfield.h"
 
 //*****************************************************************************
 // ƒRƒ“ƒXƒgƒ‰ƒNƒ^
@@ -59,7 +60,7 @@ HRESULT CGame::Init()
 	}
 
 	//BG3D
-	m_pBG = new C3DPolygon;
+	/*m_pBG = new C3DPolygon;
 	if (FAILED(m_pBG->Init()))
 	{
 		return -1;
@@ -69,7 +70,28 @@ HRESULT CGame::Init()
 	m_pBG->SetRot(D3DXVECTOR3(D3DXToRadian(0), D3DXToRadian(0), D3DXToRadian(0)));
 	m_pBG->SetTextIndex(nIndex);
 	m_pBG->SetDiagonalLine(500.0f, 500.0f);
-	m_pBG->SetPolygon();
+	m_pBG->SetPolygon();*/
+
+	//BG3D
+	m_pMeshfieldBG = new CMeshfield;
+	if (FAILED(m_pMeshfieldBG->Init()))
+	{
+	return -1;
+	}
+	
+	MeshfieldStructure MeshData;
+	ZeroMemory(&MeshData,sizeof(MeshData));
+	MeshData.pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	MeshData.rot = D3DXVECTOR3(D3DXToRadian(0), 0.0f, 0.0f);
+	MeshData.col = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	MeshData.fRadiusX = 100.0f;
+	MeshData.fRadiusZ = 100.0f;
+	MeshData.nMeshX = 20;
+	MeshData.nMeshZ = 20;
+	MeshData.nTextIndex = CTexture::LoadTexture("data/TEXTURE/ƒQ[ƒ€.png");
+	m_pMeshfieldBG->SetMeshfield(MeshData);
+	
+
 
 	//Player
 	m_pPlayer = new CPlayer;
@@ -77,13 +99,14 @@ HRESULT CGame::Init()
 	{
 		return -1;
 	}
+	m_pPlayer->SetLightVec(m_pLight->GetLightVec());
 
 	m_pBillcoard = new CBillcoard;
 	if (FAILED(m_pBillcoard->Init()))
 	{
 		return -1;
 	}
-	nIndex = CTexture::LoadTexture("data/TEXTURE/‰A—z‹Ê.png");
+	int nIndex = CTexture::LoadTexture("data/TEXTURE/‰A—z‹Ê.png");
 	m_pBillcoard->SetPos(D3DXVECTOR3(0.0f, 100.0f, 0.0f));
 	m_pBillcoard->SetRot(D3DXVECTOR3(D3DXToRadian(0), D3DXToRadian(0), D3DXToRadian(0)));
 	m_pBillcoard->SetTextIndex(nIndex);
@@ -116,12 +139,20 @@ void CGame::Uninit()
 		delete m_pLight;
 		m_pLight = nullptr;
 	}
-	//3DBG
-	if (m_pBG != nullptr)
+	////3DBG
+	//if (m_pBG != nullptr)
+	//{
+	//	m_pBG->Uninit();
+	//	delete m_pBG;
+	//	m_pBG = nullptr;
+	//}
+
+
+	if (m_pMeshfieldBG != nullptr)
 	{
-		m_pBG->Uninit();
-		delete m_pBG;
-		m_pBG = nullptr;
+		m_pMeshfieldBG->Uninit();
+		delete m_pMeshfieldBG;
+		m_pMeshfieldBG = nullptr;
 	}
 
 	//
@@ -141,7 +172,7 @@ void CGame::Uninit()
 	}
 
 	C3DObject::UninitAllModel();
-	
+
 }
 
 //*****************************************************************************
@@ -149,6 +180,7 @@ void CGame::Uninit()
 //*****************************************************************************
 void CGame::Update()
 {
+	//m_pMeshfieldBG->Update();
 	CEffect::ALLUpdate();
 	m_pPlayer->Update();
 	CInput *pInput = CInput::GetKey();
@@ -156,22 +188,37 @@ void CGame::Update()
 
 	if (pInput->Press(DIK_UP))
 	{
-		m_pCamera->AddPosV(D3DXVECTOR3(0.0f,0.0f,5.0f));
+		m_pCamera->AddPosV(D3DXVECTOR3(0.0f, 0.0f, 5.0f));
+		m_pCamera->AddPosR(D3DXVECTOR3(0.0f,0.0f,5.0f));
 	}
 	else if (pInput->Press(DIK_DOWN))
 	{
 		m_pCamera->AddPosV(D3DXVECTOR3(0.0f, 0.0f, -5.0f));
+		m_pCamera->AddPosR(D3DXVECTOR3(0.0f, 0.0f, -5.0f));
 	}
 
 	if (pInput->Press(DIK_LEFT))
 	{
 		m_pCamera->AddPosV(D3DXVECTOR3(-5.0f, 0.0f, 0.0f));
+		m_pCamera->AddPosR(D3DXVECTOR3(-5.0f, 0.0f, 0.0f));
 	}
 	else if (pInput->Press(DIK_RIGHT))
 	{
 		m_pCamera->AddPosV(D3DXVECTOR3(5.0f, 0.0f, 0.0f));
+		m_pCamera->AddPosR(D3DXVECTOR3(5.0f, 0.0f, 0.0f));
 	}
 
+
+	if (pInput->Press(DIK_RSHIFT))
+	{
+		m_pCamera->AddPosV(D3DXVECTOR3(0.0f, 5.0f, 0.0f));
+		m_pCamera->AddPosR(D3DXVECTOR3(0.0f, 5.0f, 0.0f));
+	}
+	else if (pInput->Press(DIK_RCONTROL))
+	{
+		m_pCamera->AddPosV(D3DXVECTOR3(0.0f, -5.0f, 0.0f));
+		m_pCamera->AddPosR(D3DXVECTOR3(0.0f, -5.0f, 0.0f));
+	}
 
 	if (pInput->Press(DIK_I))
 	{
@@ -181,6 +228,8 @@ void CGame::Update()
 	{
 		m_pCamera->AddPosV(D3DXVECTOR3(0.0f, -5.0f, 0.0f));
 	}
+
+	D3DXVECTOR3 Ppos = m_pPlayer->GetPos();
 
 	Effect effect;
 	effect.fAttenuation = -0.01f;
@@ -193,7 +242,7 @@ void CGame::Update()
 	effect.Color = D3DXCOLOR(0.6f, 0.3f, 0.3f, 1.0f);
 	effect.move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 	effect.bAddColor = true;
-	CEffect::CreateEffect(effect);
+	//CEffect::CreateEffect(effect);
 
 
 	if (pInput->Trigger(KEY_DECISION))
@@ -211,7 +260,9 @@ void CGame::Draw()
 	//ƒJƒƒ‰
 	m_pCamera->SetCamera();
 
-	m_pBG->Draw();
+	//m_pBG->Draw();
+
+	m_pMeshfieldBG->Draw();
 
 	m_pPlayer->Draw();
 

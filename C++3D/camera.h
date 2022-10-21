@@ -48,7 +48,9 @@ public:
 	void SetPosV(D3DXVECTOR3 posV) { m_Camera.posV = posV; }
 	void AddPosV(D3DXVECTOR3 addV) { m_Camera.posV += addV; }
 	void SetPosR(D3DXVECTOR3 posR) { m_Camera.posR = posR; }
+	void AddPosR(D3DXVECTOR3 addR) { m_Camera.posR += addR; }
 	void SetVecU(D3DXVECTOR3 vecU) { m_Camera.vecU = vecU; }
+	float GetRot();
 
 private:
 	Camera m_Camera;
