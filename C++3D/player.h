@@ -33,8 +33,11 @@ public:
 	void Update() override;
 	void Draw() override;
 
-private:
+	void SetLight(D3DXVECTOR3 vec) { m_Light = vec; }
 
+private:
+	int m_nMotionNum;
+	D3DXVECTOR3 m_Light;
 };
 
 #endif

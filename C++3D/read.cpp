@@ -15,6 +15,7 @@
 #include "result.h"
 #include "manager.h"
 #include <assert.h>
+#include "motion_parts.h"
 
 //*****************************************************************************
 // コンストラクタ
@@ -472,18 +473,12 @@ void CRead::ReadModel(ModelTxt ModelTxt)
 
 		if (strcmp(&cBffHead[0], "MODEL") == 0)
 		{//xファイルのパス
-			C3DObject::ModelPattern model;
-			//モデルの一時保管場所の初期化
-			ZeroMemory(&model, sizeof(model));
-
 			char XFilePath[LINE_MAX_READING_LENGTH];
 
 			//文字列の分析
 			sscanf(cBff, "%s = %s", &cBffHead, &XFilePath);
 
-			ReadXFile(XFilePath , &model);
-
-			C3DObject::SetModel(&model);
+			ReadXFile(XFilePath);
 		}
 		else if (strcmp(&cBffHead[0], "END") == 0)
 		{//読み切った時
@@ -500,10 +495,280 @@ void CRead::ReadModel(ModelTxt ModelTxt)
 }
 
 //*****************************************************************************
+// モーションファイルの読み込み
+//*****************************************************************************
+int CRead::ReadMotion(char * sXFilePath)
+{
+	FILE *pFile = NULL;			//ファイルポインター宣言
+
+	char cBff[LINE_MAX_READING_LENGTH];		//一行分読み取るための変数
+	char cBffHead[LINE_MAX_READING_LENGTH];	//頭の文字を読み取るための変数
+	//モデル構造体の保存用変数宣言
+	MotionData* pMotiondata = nullptr;
+	//各モデルのインデックス
+	int* pMotionIndex = nullptr;
+
+	int nMotionMax = 0;//モデルの数
+
+	int nSettingCompletionParts = 0;//設定の完了したパーツ数
+
+	int nSettingCompletionModel = 0;//設定の完了したモデル数
+
+	//ファイルを開く
+	pFile = fopen(sXFilePath, "r");
+
+	if (pFile == nullptr)
+	{//開けなかった時用
+		assert(false);
+	}
+
+	//文字列の読み取りループ処理
+	while (fgets(cBff, LINE_MAX_READING_LENGTH, pFile) != nullptr)
+	{
+		//文字列の分析
+		sscanf(cBff, "%s", &cBffHead);
+
+		if (strcmp(&cBffHead[0], "NUM_MODEL") == 0)
+		{//モデル数
+			if (pMotionIndex != nullptr)
+			{
+				assert(false);
+			}
+			sscanf(cBff, "%s = %d", &cBffHead, &nMotionMax);
+			pMotionIndex = new int[nMotionMax];
+		}
+		else if (strcmp(&cBffHead[0], "MODEL_FILENAME") == 0)
+		{//Xファイルの相対パス用
+
+			char sPath[LINE_MAX_READING_LENGTH];		//相対パス保存用
+
+			//一行の文字列から相対パスの読み取り
+			sscanf(cBff, "%s = %s", &cBffHead, &sPath[0]);
+
+			//Xファイルの読み込み
+			pMotionIndex[nSettingCompletionModel] = ReadXFile(sPath);
+			nSettingCompletionModel++;
+		}
+		else if (strcmp(&cBffHead[0], "CHARACTERSET") == 0)
+		{//動く物の配置用
+
+		 //モデルセットに必要な情報読み取りループ処理
+			while (fgets(cBff, LINE_MAX_READING_LENGTH, pFile) != NULL)
+			{
+				//文字列の分析
+				sscanf(cBff, "%s", &cBffHead);
+
+				if (strcmp(&cBffHead[0], "NUM_PARTS") == 0)
+				{//パーツ数
+				 //文字列の分析
+					if (pMotiondata != nullptr)
+					{
+						assert(false);
+					}
+					int nPartsMax = 0;//パーツの数
+					sscanf(cBff, "%s = %d", &cBffHead, &nPartsMax);
+
+					pMotiondata = new MotionData[nPartsMax];
+				}
+				else if (strcmp(&cBffHead[0], "MOVE") == 0)
+				{//移動量
+				 //文字列の分析
+					//sscanf(cBff, "%s = %f", &cBffHead, &);
+				}
+				else if (strcmp(&cBffHead[0], "JUMP") == 0)
+				{//ジャンプ量
+				 //文字列の分析
+					//sscanf(cBff, "%s = %f", &cBffHead, &);
+				}
+				else if (strcmp(&cBffHead[0], "PARTSSET") == 0)
+				{//モデルひとつのセット用のデータ読み取り
+				 //インデックス保存用
+				
+					//モデルセットに必要な情報読み取りループ処理
+					while (fgets(cBff, LINE_MAX_READING_LENGTH, pFile) != NULL)
+					{
+						//文字列の分析
+						sscanf(cBff, "%s", &cBffHead);
+
+						if (strcmp(&cBffHead[0], "INDEX") == 0)
+						{//使用するモデルの番号
+						 //文字列の分析
+							int nNum = 0;
+							sscanf(cBff, "%s = %d", &cBffHead, &nNum);
+							pMotiondata[nSettingCompletionParts].nModelPattern = pMotionIndex[nNum];
+						}
+						else if (strcmp(&cBffHead[0], "PARENT") == 0)
+						{//親の番号
+						 //文字列の分析
+							sscanf(cBff, "%s = %d", &cBffHead, &pMotiondata[nSettingCompletionParts].nParentNum);
+						}
+						else if (strcmp(&cBffHead[0], "POS") == 0)
+						{//モデルの位置
+						 //文字列の分析
+							D3DXVECTOR3 pos;
+							sscanf(cBff, "%s = %f%f%f", &cBffHead, &pos.x, &pos.y, &pos.z);
+							pMotiondata[nSettingCompletionParts].pos = pos;
+						}
+						else if (strcmp(&cBffHead[0], "ROT") == 0)
+						{//モデルの向き
+						 //文字列の分析
+							D3DXVECTOR3 rot;
+							sscanf(cBff, "%s = %f%f%f", &cBffHead, &rot.x, &rot.y, &rot.z);
+							pMotiondata[nSettingCompletionParts].rot = rot;
+						}
+						else if (strcmp(&cBffHead[0], "END_PARTSSET") == 0)
+						{//モデル１パーツのセット終了
+							nSettingCompletionParts++;
+							break;
+						}
+
+						//保存中の文字列の初期化
+						ZeroMemory(&cBff, sizeof(cBff));
+						ZeroMemory(&cBffHead, sizeof(cBffHead));
+
+					}
+				}
+				else if (strcmp(&cBffHead[0], "END_CHARACTERSET") == 0)
+				{//モデルのデータ読み取り終了
+					break;
+				}
+
+				//保存中の文字列の初期化
+				ZeroMemory(&cBff, sizeof(cBff));
+				ZeroMemory(&cBffHead, sizeof(cBffHead));
+
+			}
+		}
+		//else if (strcmp(&cBffHead[0], "MOTIONSET") == 0)
+		//{//モーション用のデータ読み取り
+		//	int nSetMotionEnd = 0;//使った配列の数のカウント
+		//	int nMotionKey = 0;//使ったキーの数のカウント
+		//					   //モデルセットに必要な情報読み取りループ処理
+		//	while (fgets(cBff, LINE_MAX_READING_LENGTH, pFile) != NULL)
+		//	{
+		//		//文字列の分析
+		//		sscanf(cBff, "%s", &cBffHead);
+
+		//		if (strcmp(&cBffHead[0], "LOOP") == 0)
+		//		{//このモーションはループ再生するかどうか
+		//		 //文字列の分析
+		//			sscanf(cBff, "%s = %d", &cBffHead, &);
+		//		}
+		//		else if (strcmp(&cBffHead[0], "NUM_KEY") == 0)
+		//		{//モーションのキー数
+		//		 //文字列の分析
+		//			sscanf(cBff, "%s = %d", &cBffHead, &);
+		//		}
+		//		else if (strcmp(&cBffHead[0], "KEYSET") == 0)
+		//		{//モデルパーツのモーション設定
+		//			int nModelPasCnt = 0;		//モデルパーツのセット番号
+		//										//モデルセットに必要な情報読み取りループ処理
+		//			while (fgets(cBff, LINE_MAX_READING_LENGTH, pFile) != NULL)
+		//			{
+		//				//文字列の分析
+		//				sscanf(cBff, "%s", &cBffHead);
+
+		//				if (strcmp(&cBffHead[0], "FRAME") == 0)
+		//				{//このモーションは何フレーム数で再生するかチェック
+		//				 //文字列の分析
+		//					sscanf(cBff, "%s = %d", &cBffHead, &);
+		//					if ( == 0)
+		//					{//再生フレーム数が0の場合1にする
+		//						 = 1;
+		//					}
+		//				}
+		//				else if (strcmp(&cBffHead[0], "KEY") == 0)
+		//				{//モーションの１パーツのセット
+		//				 //モデルセットに必要な情報読み取りループ処理
+		//					while (fgets(cBff, LINE_MAX_READING_LENGTH, pFile) != NULL)
+		//					{
+		//						//文字列の分析
+		//						sscanf(cBff, "%s", &cBffHead);
+
+		//						if (strcmp(&cBffHead[0], "POS") == 0)
+		//						{//モーション中の１パーツの位置
+		//						 //文字列の分析
+		//							sscanf(cBff, "%s = %f%f%f", &cBffHead,&,&,&);
+		//						}
+		//						else if (strcmp(&cBffHead[0], "ROT") == 0)
+		//						{//モーション中の１パーツの向き
+		//						 //文字列の分析
+		//							sscanf(cBff, "%s = %f%f%f", &cBffHead,&,&,&);
+		//						}
+		//						else if (strcmp(&cBffHead[0], "END_KEY") == 0)
+		//						{//モーション中の１パーツのセット終了
+		//							break;
+		//						}
+
+		//						//保存中の文字列の初期化
+		//						ZeroMemory(&cBff, sizeof(cBff));
+		//						ZeroMemory(&cBffHead, sizeof(cBffHead));
+
+		//					}
+		//				}
+		//				else if (strcmp(&cBffHead[0], "END_KEYSET") == 0)
+		//				{
+		//					break;
+		//				}
+
+		//				//保存中の文字列の初期化
+		//				ZeroMemory(&cBff, sizeof(cBff));
+		//				ZeroMemory(&cBffHead, sizeof(cBffHead));
+
+		//			}
+		//		}
+		//		else if (strcmp(&cBffHead[0], "END_MOTIONSET") == 0)
+		//		{//モデルパーツのモーション設定終了
+		//			break;
+		//		}
+
+		//		//保存中の文字列の初期化
+		//		ZeroMemory(&cBff, sizeof(cBff));
+		//		ZeroMemory(&cBffHead, sizeof(cBffHead));
+
+		//	}
+		//}
+		else if (strcmp(&cBffHead[0], "END_SCRIPT") == 0)
+		{//テキストファイルを読み切った時
+			break;
+		}
+
+		//保存中の文字列の初期化
+		ZeroMemory(&cBff, sizeof(cBff));
+		ZeroMemory(&cBffHead, sizeof(cBffHead));
+
+	}
+
+
+
+	//セットモーションオブジェクト
+	int nMotionNum = CMotionParts::CreateMotionObj(pMotiondata, nSettingCompletionParts);
+
+	//ファイルを閉じる
+	fclose(pFile);
+
+	if (pMotiondata != nullptr)
+	{
+		delete[] pMotiondata;
+		pMotiondata = nullptr;
+	}
+
+	if (pMotionIndex != nullptr)
+	{
+		delete[] pMotionIndex;
+		pMotionIndex = nullptr;
+	}
+
+	return nMotionNum;
+}
+
+//*****************************************************************************
 // Xファイルの読み込み
 //*****************************************************************************
-void CRead::ReadXFile(char * sXFilePath, C3DObject::ModelPattern * pModel)
+int CRead::ReadXFile(char * sXFilePath)
 {
+	C3DObject::ModelPattern Model;
+
 	CManager *pManager = GetManager();
 
 	LPDIRECT3DDEVICE9 pD3DDevice = nullptr;
@@ -515,30 +780,33 @@ void CRead::ReadXFile(char * sXFilePath, C3DObject::ModelPattern * pModel)
 		D3DXMESH_SYSTEMMEM,
 		pD3DDevice,
 		nullptr,
-		&pModel->pBuffMatModel,
+		&Model.pBuffMatModel,
 		nullptr,
-		&pModel->nNumMatModel,
-		&pModel->pMeshModel);
+		&Model.nNumMatModel,
+		&Model.pMeshModel);
 
-	pModel->bUse = true;
+	Model.bUse = true;
 
 	// バッファの先頭ポインタをD3DXMATERIALにキャストして取得
-	D3DXMATERIAL *pMat = (D3DXMATERIAL*)pModel->pBuffMatModel->GetBufferPointer();
+	D3DXMATERIAL *pMat = (D3DXMATERIAL*)Model.pBuffMatModel->GetBufferPointer();
 
 	// 各メッシュのマテリアル情報を取得する
-	for (int i = 0; i < (int)pModel->nNumMatModel; i++)
+	for (int i = 0; i < (int)Model.nNumMatModel; i++)
 	{
-		pModel->pTexture[i] = nullptr;
+		Model.pTexture[i] = nullptr;
 
 		if (pMat[i].pTextureFilename != nullptr)
 		{// マテリアルで設定されているテクスチャ読み込み
 			D3DXCreateTextureFromFileA(pD3DDevice,
 				pMat[i].pTextureFilename,
-				&pModel->pTexture[i]);
+				&Model.pTexture[i]);
 		}
 		else
 		{
-			pModel->pTexture[i] = nullptr;
+			Model.pTexture[i] = nullptr;
 		}
 	}
+
+	//モデルの登録
+	return C3DObject::SetModel(&Model);
 }

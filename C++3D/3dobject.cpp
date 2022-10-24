@@ -66,12 +66,12 @@ void C3DObject::Draw()
 	pD3DDevice = pManager->GetDeviceManager();
 
 
-	D3DXMATRIX mtxRoot;					//大元の親のワールドマトリックス
+	D3DXMATRIX mtxRoot;					//元の親のワールドマトリックス
 	D3DXMATRIX mtxRot, mtxTrans,mtxScaling;		//計算用のマトリックス
 	D3DMATERIAL9 matDef;			//現在のマテリアル保存
 	D3DXMATERIAL *pMat;				//マテリアルデータへのポインタ
 
-	//ワールドマトリックスの初期化（大元の親）
+	//ワールドマトリックスの初期化（元の親）
 	D3DXMatrixIdentity(&mtxRoot);
 
 	//サイズの変更
@@ -255,7 +255,7 @@ void C3DObject::Set3DObject(int nPattn, D3DXVECTOR3 pos)
 //*****************************************************************************
 // モデルのセット
 //*****************************************************************************
-void C3DObject::SetModel(ModelPattern *pModel)
+int C3DObject::SetModel(ModelPattern *pModel)
 {
 	for (int nCnt = 0; nCnt < MODEL_PATTERN_MAX; nCnt++)
 	{
@@ -263,9 +263,10 @@ void C3DObject::SetModel(ModelPattern *pModel)
 		{
 			m_ModelPattern[nCnt] = *pModel;
 			m_ModelPattern[nCnt].bUse = true;
-			break;
+			return nCnt;
 		}
 	}
+	return -1;
 }
 
 //*****************************************************************************

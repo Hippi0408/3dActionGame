@@ -15,6 +15,7 @@
 #include "game.h"
 #include "camera.h"
 #include "meshfield.h"
+#include "motion_parts.h"
 
 const D3DXVECTOR3 CPlayer::INIT_POS = D3DXVECTOR3(0.0f,0.0f,0.0f);
 //*****************************************************************************
@@ -44,13 +45,12 @@ HRESULT CPlayer::Init()
 	SetPos(INIT_POS);
 
 	CRead cRead;
-	ModelPattern modelPattern;
+	
+	cRead.ReadXFile("data/MODEL/î†êl02.x");
+	
+	m_nMotionNum = cRead.ReadMotion("data/MOTION/motionplayer.txt");
 
-	ZeroMemory(&modelPattern,sizeof(modelPattern));
-
-	cRead.ReadXFile("data/MODEL/î†êl02.x", &modelPattern);
-	SetModel(&modelPattern);
-
+	CMotionParts::SetLight(m_Light, m_nMotionNum);
 
 	return S_OK;
 }
@@ -161,8 +161,11 @@ void CPlayer::Update()
 
 	if (groundpos != D3DXVECTOR3(0.0f, 0.0f, 0.0f))
 	{
-		SetShadowPos(groundpos);
+		CMotionParts::AllSetShadowPos(groundpos, m_nMotionNum);
 	}
+
+	CMotionParts::MoveMotionModel(GetPos(),GetRot(),m_nMotionNum);
+	
 }
 
 //*****************************************************************************
@@ -171,5 +174,5 @@ void CPlayer::Update()
 void CPlayer::Draw()
 {
 
-	C3DObject::Draw();
+	//C3DObject::Draw();
 }

@@ -44,8 +44,9 @@ public:
 	~CRead();
 	void ReadAnchorPoint();
 	//void ReadEnemy(StageNum Stage);
-	void ReadXFile(char *sXFilePath ,C3DObject::ModelPattern *pModel);
+	int ReadXFile(char *sXFilePath);
 	void ReadModel(ModelTxt ModelTxt);
+	int ReadMotion(char *sXFilePath);
 	//void ReadRanking(StageNum Stage,CRanking *pRnking);
 	//void SaveRanking(StageNum Stage,const int *pRanking ,const CRanking::NameData *pNameData, const int *pAirframe);
 

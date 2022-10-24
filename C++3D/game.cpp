@@ -21,6 +21,7 @@
 #include "billboard.h"
 #include "effect.h"
 #include "meshfield.h"
+#include "motion_parts.h"
 
 //*****************************************************************************
 // コンストラクタ
@@ -59,18 +60,7 @@ HRESULT CGame::Init()
 		return -1;
 	}
 
-	//BG3D
-	/*m_pBG = new C3DPolygon;
-	if (FAILED(m_pBG->Init()))
-	{
-		return -1;
-	}
-	int nIndex = CTexture::LoadTexture("data/TEXTURE/ゲーム.png");
-	m_pBG->SetPos(D3DXVECTOR3(0.0f, 0.0f, 0.0f));
-	m_pBG->SetRot(D3DXVECTOR3(D3DXToRadian(0), D3DXToRadian(0), D3DXToRadian(0)));
-	m_pBG->SetTextIndex(nIndex);
-	m_pBG->SetDiagonalLine(500.0f, 500.0f);
-	m_pBG->SetPolygon();*/
+	
 
 	//BG3D
 	m_pMeshfieldBG = new CMeshfield;
@@ -99,7 +89,7 @@ HRESULT CGame::Init()
 	{
 		return -1;
 	}
-	m_pPlayer->SetLightVec(m_pLight->GetLightVec());
+	m_pPlayer->SetLight(m_pLight->GetLightVec());
 
 	m_pBillcoard = new CBillcoard;
 	if (FAILED(m_pBillcoard->Init()))
@@ -139,13 +129,7 @@ void CGame::Uninit()
 		delete m_pLight;
 		m_pLight = nullptr;
 	}
-	////3DBG
-	//if (m_pBG != nullptr)
-	//{
-	//	m_pBG->Uninit();
-	//	delete m_pBG;
-	//	m_pBG = nullptr;
-	//}
+
 
 
 	if (m_pMeshfieldBG != nullptr)
@@ -173,6 +157,7 @@ void CGame::Uninit()
 
 	C3DObject::UninitAllModel();
 
+	CMotionParts::ALLUninit();
 }
 
 //*****************************************************************************
@@ -266,7 +251,11 @@ void CGame::Draw()
 
 	m_pPlayer->Draw();
 
+	CMotionParts::ALLDraw();
+
 	m_pBillcoard->Draw();
+
+
 
 	CEffect::ALLDraw();
 }

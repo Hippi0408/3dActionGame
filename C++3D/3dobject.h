@@ -58,6 +58,7 @@ public:
 	void Set3DObject(int nPattn, D3DXVECTOR3 pos);
 	D3DXVECTOR3 GetPos() { return m_Model.pos; }
 	void SetPos(D3DXVECTOR3 pos) { m_Model.pos = pos; }
+	void SetChildrenPos(D3DXVECTOR3 pos) { m_Model.posChildren = pos; }
 	void AddPos(D3DXVECTOR3 add) { m_Model.pos += add; }
 	void SetRot(D3DXVECTOR3 rot) { m_Model.rot = rot; }
 	D3DXVECTOR3 GetRot() { return m_Model.rot; }
@@ -66,10 +67,12 @@ public:
 	void SetLightVec(D3DXVECTOR3 LightVec) { m_LightVec = LightVec; }
 	void SetShadowPos(D3DXVECTOR3 shadowpos) { m_ShadowPos = shadowpos; }
 	D3DXVECTOR3 GetWorldPos();
-
+	D3DXMATRIX GetMatrix() { return m_Model.mtxWorld; }
+	void SetMatrix(D3DXMATRIX mtx) { m_Model.mtxWorld = mtx; }
 	D3DXVECTOR3 GetSize();
+	void SetModelPattnNum(int nPattnNum) { m_Model.nPattn = nPattnNum; }
 
-	static void SetModel(ModelPattern *pModel);
+	static int SetModel(ModelPattern *pModel);
 	static void UninitAllModel();
 
 private:
