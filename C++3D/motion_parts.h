@@ -97,7 +97,7 @@ private:
 	CMotionParts* m_pNextMotionParts;
 	CMotionParts* m_pLastTimeMotionParts;
 
-	CMotionParts* m_pRarent;//親のポインタ
+	CMotionParts* m_pRarent;		//親のポインタ
 	KEY_SET m_MotionKey[MAX_MOTION];//登録した動きの情報
 	D3DXVECTOR3 m_RotMove;			//1フレームあたりの動く量(rot)
 	D3DXVECTOR3 m_RarentPosDistance;//親との距離
