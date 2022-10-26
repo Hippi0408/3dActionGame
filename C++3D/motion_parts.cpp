@@ -16,7 +16,8 @@ const D3DXVECTOR3 CMotionParts::INIT_POS = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 CMotionParts *CMotionParts::m_pMotionPartsTop = nullptr;
 CMotionParts *CMotionParts::m_pMotionPartsCurrent = nullptr;
 int CMotionParts::m_nModelMax = 0;
-int CMotionParts::m_MotionPlayMotonNum[MAX_MOTION_ALL] = {};
+int CMotionParts::m_nMotionPlayMotonNum[MAX_MOTION_ALL] = {};
+int CMotionParts::m_nMotionRegistrationNum[MAX_MOTION_ALL] = {};
 //*****************************************************************************
 // コンストラクタ
 //*****************************************************************************
@@ -42,7 +43,7 @@ CMotionParts::CMotionParts()
 	}
 	SetCurrentMotionParts(this);
 
-	m_nModelObjNum = m_nModelMax;
+	m_nModelObjNum = 0;
 }
 
 //*****************************************************************************
@@ -61,10 +62,6 @@ HRESULT CMotionParts::Init()
 	{
 		return -1;
 	}
-
-	SetPos(INIT_POS);
-	SetMotion(0);
-
 	return S_OK;
 }
 
@@ -93,6 +90,16 @@ void CMotionParts::Uninit()
 		m_pNextMotionParts->SetLastTimeMotionParts(m_pLastTimeMotionParts);
 	}
 
+	for (int nMotion = 0; nMotion < 1; nMotion++)
+	{
+		if (m_MotionKey[nMotion].pKey != nullptr)
+		{
+			delete[] m_MotionKey[nMotion].pKey;
+			m_MotionKey[nMotion].pKey = nullptr;
+		}
+	}
+
+
 	C3DObject::Uninit();
 
 	delete this;
@@ -104,19 +111,51 @@ void CMotionParts::Uninit()
 void CMotionParts::Update()
 {
 	// 目的のフレーム
-	int nObjectiveFrame = m_MotionKey[m_MotionPlayMotonNum[m_nModelObjNum]].nFrame[m_nKey];
+	int nObjectiveFrame = m_MotionKey[m_nMotionPlayMotonNum[m_nModelObjNum]].pKey[m_nKey].nFrame;
 
+	// フレームの加算
+	m_nFrame++;
 	// 目的のフレーム　＜　現在のフレーム
 	if (nObjectiveFrame < m_nFrame)
 	{
 		// 次の位置までの計算
 		NextMotionPosition();
+		m_nFrame = 0;
 	}
 
 	// rotの加算
 	AddRot(m_RotMove);
-	// フレームの加算
-	m_nFrame++;
+
+	D3DXVECTOR3 rot = GetRot();
+
+	if (rot.x >= D3DX_PI)
+	{
+		rot.x -= D3DX_PI * 2;
+	}
+	else if (rot.x <= -D3DX_PI)
+	{
+		rot.x += D3DX_PI * 2;
+	}
+
+	if (rot.y >= D3DX_PI)
+	{
+		rot.y -= D3DX_PI * 2;
+	}
+	else if (rot.y <= -D3DX_PI)
+	{
+		rot.y += D3DX_PI * 2;
+	}
+	
+	if (rot.z >= D3DX_PI)
+	{
+		rot.z -= D3DX_PI * 2;
+	}
+	else if (rot.z <= -D3DX_PI)
+	{
+		rot.z += D3DX_PI * 2;
+	}
+
+	SetRot(rot);
 }
 
 //*****************************************************************************
@@ -135,14 +174,14 @@ void CMotionParts::Draw()
 	if (m_pRarent != nullptr)
 	{
 		mtxRarent = m_pRarent->GetMatrix();
-		SetPos(m_pRarent->GetWorldPos());
-		SetRot(m_pRarent->GetRot());
 	}
 	else
 	{
 		pD3DDevice->GetTransform(D3DTS_WORLD, &mtxRarent);
 	}
-
+	
+	//自身のマトリックスの計算
+	CalculationMatrix();
 	mtx = GetMatrix();
 
 	//モデルのマトリックス　＊　親のワールドマトリックス
@@ -168,8 +207,18 @@ void CMotionParts::SetMotion(int nMotionNum)
 {
 	m_nFrame = 0;
 	m_nKey = 0;
-	D3DXVECTOR3 rot = m_MotionKey[nMotionNum].aKey[m_nKey].rot;
+	D3DXVECTOR3 rot = m_MotionKey[nMotionNum].pKey[m_nKey].rot;
 	SetRot(rot);
+}
+
+//*****************************************************************************
+//実際の動きの登録
+//*****************************************************************************
+void CMotionParts::SetMotionData(KEY_SET KeyData)
+{
+	m_MotionKey[0].bLoop = KeyData.bLoop;
+	m_MotionKey[0].nKeyMax = KeyData.nKeyMax;
+	m_MotionKey[0].pKey = KeyData.pKey;
 }
 
 //*****************************************************************************
@@ -177,24 +226,75 @@ void CMotionParts::SetMotion(int nMotionNum)
 //*****************************************************************************
 void CMotionParts::NextMotionPosition()
 {
-	//現在のKEYが目的を超えたら
-	if (m_nKey > m_MotionKey[m_MotionPlayMotonNum[m_nModelObjNum]].nKeyMax)
-	{
-		m_nKey = 0;
-	}
+	D3DXVECTOR3 nowRot, nextRot;
+	int nFrameRatio;
 
-	//今の向き
-	D3DXVECTOR3 nowRot = GetRot();
-	//次の向き
-	D3DXVECTOR3 nextRot = m_MotionKey[m_MotionPlayMotonNum[m_nModelObjNum]].aKey[m_nKey + 1].rot;
-	//全体フレーム数に対しての割合
-	float fFrameRatio = (float)100.0f / m_MotionKey[m_MotionPlayMotonNum[m_nModelObjNum]].nFrame[m_nKey + 1];
+	int nDestKey = m_MotionKey[m_nMotionPlayMotonNum[m_nModelObjNum]].nKeyMax;
+
+	//現在のKEYが目的を超えたら
+	if (m_nKey >= nDestKey - 1)
+	{
+		//今の向き
+		nowRot = GetRot();
+		//次の向き
+		nextRot = m_MotionKey[m_nMotionPlayMotonNum[m_nModelObjNum]].pKey[0].rot;
+		//全体フレーム数に対しての割合
+		nFrameRatio = m_MotionKey[m_nMotionPlayMotonNum[m_nModelObjNum]].pKey[0].nFrame;
+	}
+	else
+	{
+		//今の向き
+		nowRot = GetRot();
+		//次の向き
+		nextRot = m_MotionKey[m_nMotionPlayMotonNum[m_nModelObjNum]].pKey[m_nKey + 1].rot;
+		//全体フレーム数に対しての割合
+		nFrameRatio = m_MotionKey[m_nMotionPlayMotonNum[m_nModelObjNum]].pKey[m_nKey + 1].nFrame;
+	}
+	
+	
 
 	//1フレームあたりの動く量
 	D3DXVECTOR3 rotMove;
-	rotMove = (nextRot - nowRot) / fFrameRatio;
+	
+
+	D3DXVECTOR3 rot = (nextRot - nowRot);
+
+	if (rot.x >= D3DX_PI)
+	{
+		rot.x -= D3DX_PI * 2;
+	}
+	else if (rot.x <= -D3DX_PI)
+	{
+		rot.x += D3DX_PI * 2;
+	}
+
+	if (rot.y >= D3DX_PI)
+	{
+		rot.y -= D3DX_PI * 2;
+	}
+	else if (rot.y <= -D3DX_PI)
+	{
+		rot.y += D3DX_PI * 2;
+	}
+
+	if (rot.z >= D3DX_PI)
+	{
+		rot.z -= D3DX_PI * 2;
+	}
+	else if (rot.z <= -D3DX_PI)
+	{
+		rot.z += D3DX_PI * 2;
+	}
+
+	rotMove = rot / nFrameRatio;
 	m_RotMove = rotMove;
+
 	m_nKey++;
+	if (m_nKey >= nDestKey)
+	{
+		m_nKey = 0;
+	}
+	
 }
 
 //*****************************************************************************
@@ -282,7 +382,6 @@ void CMotionParts::ALLDraw()
 //*****************************************************************************
 int CMotionParts::CreateMotionObj(MotionData* pMotionData, int nPartsMax)
 {
-
 	for (int nCnt = 0; nCnt < nPartsMax; nCnt++)
 	{
 		CMotionParts* pMotionParts = new CMotionParts;
@@ -294,7 +393,7 @@ int CMotionParts::CreateMotionObj(MotionData* pMotionData, int nPartsMax)
 
 		pMotionParts->SetPartsNum(nCnt);//一つのモーションの中の番号
 		pMotionParts->SetModelPattnNum(pMotionData[nCnt].nModelPattern);//使用するモデルのインデックス
-		pMotionParts->SetChildrenPos(pMotionData[nCnt].pos);//モデルの位置
+		pMotionParts->SetPos(pMotionData[nCnt].pos);//モデルの位置
 		pMotionParts->SetRot(pMotionData[nCnt].rot);//モデルの向き
 		
 		if (pMotionData[nCnt].nParentNum >= 0)
@@ -331,8 +430,6 @@ CMotionParts * CMotionParts::GetMotionPartsPointer(int nMotionNum, int nPartsNum
 		pMotionParts = pMotionParts->GetNextMotionParts();
 	}
 
-
-	assert(false);
 	return nullptr;
 }
 
@@ -341,8 +438,8 @@ CMotionParts * CMotionParts::GetMotionPartsPointer(int nMotionNum, int nPartsNum
 //*****************************************************************************
 void CMotionParts::MoveMotionModel(D3DXVECTOR3 pos, D3DXVECTOR3 rot, int nMotionNum)
 {
-	GetMotionPartsPointer(nMotionNum, 0)->SetPos(pos);
-	GetMotionPartsPointer(nMotionNum, 0)->SetRot(rot);
+	GetMotionPartsPointer(nMotionNum, 0)->SetParentPos(pos);
+	GetMotionPartsPointer(nMotionNum, 0)->SetParentRot(rot);
 }
 
 //*****************************************************************************
@@ -379,4 +476,47 @@ void CMotionParts::AllSetShadowPos(D3DXVECTOR3 pos, int nMotionNum)
 		}
 		pMotionParts = pMotionParts->GetNextMotionParts();
 	}
+}
+
+//*****************************************************************************
+//モーションの登録
+//*****************************************************************************
+void CMotionParts::SetMotionFileData(const MotionMoveData MotionMoveData, int nMotionNum)
+{
+	CMotionParts* pMotionParts = nullptr;//一時保管場所
+	int nPartsNum = 0;//カウンター
+	pMotionParts = GetMotionPartsPointer(nMotionNum, nPartsNum);//条件に合うポインタの獲得
+	while (pMotionParts != nullptr)
+	{
+		//一時保管場所
+		KEY_SET KeySet;
+
+		KeySet.pKey = new KEY[MotionMoveData.nKeyMax];
+
+		for (int nCnt = 0; nCnt < MotionMoveData.nKeyMax; nCnt++)
+		{
+			//フレーム
+			KeySet.pKey[nCnt].nFrame = MotionMoveData.pMotionKeyData[nCnt].nFrame;
+			//Pos
+			KeySet.pKey[nCnt].pos = MotionMoveData.pMotionKeyData[nCnt].pMotionPartsData[nPartsNum].pos;
+			//Rot
+			KeySet.pKey[nCnt].rot = MotionMoveData.pMotionKeyData[nCnt].pMotionPartsData[nPartsNum].rot;
+		}
+
+		//ループ設定
+		KeySet.bLoop = MotionMoveData.bLoop;
+		//キーの最大
+		KeySet.nKeyMax = MotionMoveData.nKeyMax;
+
+		//登録
+		pMotionParts->SetMotionData(KeySet);
+
+		//pMotionParts->SetPos(INIT_POS);
+		pMotionParts->SetMotion(0);
+
+
+		nPartsNum++;//カウンターを進める
+		pMotionParts = GetMotionPartsPointer(nMotionNum, nPartsNum);//条件に合うポインタの獲得
+	}
+	
 }

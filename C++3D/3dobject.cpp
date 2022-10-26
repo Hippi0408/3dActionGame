@@ -51,7 +51,6 @@ void C3DObject::Uninit()
 //*****************************************************************************
 void C3DObject::Update()
 {
-
 }
 
 //*****************************************************************************
@@ -65,42 +64,8 @@ void C3DObject::Draw()
 
 	pD3DDevice = pManager->GetDeviceManager();
 
-
-	D3DXMATRIX mtxRoot;					//元の親のワールドマトリックス
-	D3DXMATRIX mtxRot, mtxTrans,mtxScaling;		//計算用のマトリックス
 	D3DMATERIAL9 matDef;			//現在のマテリアル保存
 	D3DXMATERIAL *pMat;				//マテリアルデータへのポインタ
-
-	//ワールドマトリックスの初期化（元の親）
-	D3DXMatrixIdentity(&mtxRoot);
-
-	//サイズの変更
-	D3DXMatrixScaling(&mtxScaling,m_fSize, m_fSize, m_fSize);
-	D3DXMatrixMultiply(&mtxRoot, &mtxRoot, &mtxScaling);
-
-	//向きを反映
-	D3DXMatrixRotationYawPitchRoll(&mtxRot, m_Model.rot.y, m_Model.rot.x, m_Model.rot.z);
-	D3DXMatrixMultiply(&mtxRoot, &mtxRoot, &mtxRot);
-
-	//位置の反映
-	D3DXMatrixTranslation(&mtxTrans, m_Model.pos.x, m_Model.pos.y, m_Model.pos.z);
-	D3DXMatrixMultiply(&mtxRoot, &mtxRoot, &mtxTrans);
-
-	//ワールドマトリックスの初期化
-	D3DXMatrixIdentity(&m_Model.mtxWorld);
-
-	//向きを反映
-	D3DXMatrixRotationYawPitchRoll(&mtxRot, 0.0f, 0.0f, 0.0f);
-
-	D3DXMatrixMultiply(&m_Model.mtxWorld, &m_Model.mtxWorld, &mtxRot);
-
-	//位置の反映
-	D3DXMatrixTranslation(&mtxTrans, m_Model.posChildren.x, m_Model.posChildren.y, m_Model.posChildren.z);
-	D3DXMatrixMultiply(&m_Model.mtxWorld, &m_Model.mtxWorld, &mtxTrans);
-
-
-	//モデルのマトリックス　＊　親のワールドマトリックス
-	D3DXMatrixMultiply(&m_Model.mtxWorld, &m_Model.mtxWorld, &mtxRoot);
 
 	//影をつける
 	if (m_LightVec != D3DXVECTOR3(0.0f, 0.0f, 0.0f))
@@ -253,6 +218,46 @@ void C3DObject::Set3DObject(int nPattn, D3DXVECTOR3 pos)
 }
 
 //*****************************************************************************
+// マトリックスの計算
+//*****************************************************************************
+void C3DObject::CalculationMatrix()
+{
+	D3DXMATRIX mtxRoot;					//元の親のワールドマトリックス
+	D3DXMATRIX mtxRot, mtxTrans, mtxScaling;		//計算用のマトリックス
+	
+
+	//ワールドマトリックスの初期化（元の親）
+	D3DXMatrixIdentity(&mtxRoot);
+
+	//サイズの変更
+	D3DXMatrixScaling(&mtxScaling, m_fSize, m_fSize, m_fSize);
+	D3DXMatrixMultiply(&mtxRoot, &mtxRoot, &mtxScaling);
+
+	//向きを反映
+	D3DXMatrixRotationYawPitchRoll(&mtxRot, m_Model.rotParent.y, m_Model.rotParent.x, m_Model.rotParent.z);
+	D3DXMatrixMultiply(&mtxRoot, &mtxRoot, &mtxRot);
+
+	//位置の反映
+	D3DXMatrixTranslation(&mtxTrans, m_Model.posParent.x, m_Model.posParent.y, m_Model.posParent.z);
+	D3DXMatrixMultiply(&mtxRoot, &mtxRoot, &mtxTrans);
+
+	//ワールドマトリックスの初期化
+	D3DXMatrixIdentity(&m_Model.mtxWorld);
+
+	//向きを反映
+	D3DXMatrixRotationYawPitchRoll(&mtxRot, m_Model.rot.y, m_Model.rot.x, m_Model.rot.z);
+
+	D3DXMatrixMultiply(&m_Model.mtxWorld, &m_Model.mtxWorld, &mtxRot);
+
+	//位置の反映
+	D3DXMatrixTranslation(&mtxTrans, m_Model.pos.x, m_Model.pos.y, m_Model.pos.z);
+	D3DXMatrixMultiply(&m_Model.mtxWorld, &m_Model.mtxWorld, &mtxTrans);
+
+	//モデルのマトリックス　＊　親のワールドマトリックス
+	D3DXMatrixMultiply(&m_Model.mtxWorld, &m_Model.mtxWorld, &mtxRoot);
+}
+
+//*****************************************************************************
 // モデルのセット
 //*****************************************************************************
 int C3DObject::SetModel(ModelPattern *pModel)
@@ -315,6 +320,19 @@ D3DXVECTOR3 C3DObject::GetWorldPos()
 	pos.z = m_Model.mtxWorld._43;
 
 	return pos;
+}
+
+//*****************************************************************************
+// このモデルのワールドRot
+//*****************************************************************************
+D3DXVECTOR3 C3DObject::GetWorldRot()
+{
+	D3DXVECTOR3 rot;
+	rot.x = m_Model.mtxWorld._41;
+	rot.y = m_Model.mtxWorld._42;
+	rot.z = m_Model.mtxWorld._43;
+
+	return rot;
 }
 
 //*****************************************************************************

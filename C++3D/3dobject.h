@@ -39,11 +39,13 @@ public:
 	typedef struct
 	{
 		D3DXMATRIX mtxWorld;				//ワールドマトリックス
-		D3DXVECTOR3 posChildren;			//子の位置
-		D3DXVECTOR3 pos;					//位置親
+		D3DXVECTOR3 posParent;				//位置親
+		D3DXVECTOR3 rotParent;				//向き親
+		D3DXVECTOR3 rot;					//向き
+		D3DXVECTOR3 pos;					//位置
 		D3DXVECTOR3 move;					//移動
 		D3DXVECTOR3 vtxMin, vtxMax;			//モデルのサイズ
-		D3DXVECTOR3 rot;					//向き
+		
 		int nPattn;							//モデルのパターン
 	}Model;
 
@@ -57,21 +59,25 @@ public:
 	virtual void Draw() override;
 	void Set3DObject(int nPattn, D3DXVECTOR3 pos);
 	D3DXVECTOR3 GetPos() { return m_Model.pos; }
-	void SetPos(D3DXVECTOR3 pos) { m_Model.pos = pos; }
-	void SetChildrenPos(D3DXVECTOR3 pos) { m_Model.posChildren = pos; }
-	void AddPos(D3DXVECTOR3 add) { m_Model.pos += add; }
-	void SetRot(D3DXVECTOR3 rot) { m_Model.rot = rot; }
 	D3DXVECTOR3 GetRot() { return m_Model.rot; }
+	void SetPos(D3DXVECTOR3 pos) { m_Model.pos = pos; }
+	void SetRot(D3DXVECTOR3 rot) { m_Model.rot = rot; }
+	D3DXVECTOR3 GetParentPos() { return m_Model.posParent; }
+	D3DXVECTOR3 GetParentRot() { return m_Model.rotParent; }
+	void SetParentPos(D3DXVECTOR3 pos) { m_Model.posParent = pos; }
+	void SetParentRot(D3DXVECTOR3 rot) { m_Model.rotParent = rot; }
+	void AddPos(D3DXVECTOR3 add) { m_Model.pos += add; }
 	void AddRot(D3DXVECTOR3 add) { m_Model.rot += add; }
 	void SetSize(float fSize) { m_fSize = fSize; }
 	void SetLightVec(D3DXVECTOR3 LightVec) { m_LightVec = LightVec; }
 	void SetShadowPos(D3DXVECTOR3 shadowpos) { m_ShadowPos = shadowpos; }
 	D3DXVECTOR3 GetWorldPos();
+	D3DXVECTOR3 GetWorldRot();
 	D3DXMATRIX GetMatrix() { return m_Model.mtxWorld; }
 	void SetMatrix(D3DXMATRIX mtx) { m_Model.mtxWorld = mtx; }
 	D3DXVECTOR3 GetSize();
 	void SetModelPattnNum(int nPattnNum) { m_Model.nPattn = nPattnNum; }
-
+	void CalculationMatrix();
 	static int SetModel(ModelPattern *pModel);
 	static void UninitAllModel();
 

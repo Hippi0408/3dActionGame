@@ -229,6 +229,7 @@ void CGame::Update()
 	effect.bAddColor = true;
 	//CEffect::CreateEffect(effect);
 
+	CMotionParts::ALLUpdate();
 
 	if (pInput->Trigger(KEY_DECISION))
 	{

@@ -514,6 +514,9 @@ int CRead::ReadMotion(char * sXFilePath)
 
 	int nSettingCompletionModel = 0;//設定の完了したモデル数
 
+	//セットモーションオブジェクト
+	int nMotionNum = 0;
+
 	//ファイルを開く
 	pFile = fopen(sXFilePath, "r");
 
@@ -630,6 +633,15 @@ int CRead::ReadMotion(char * sXFilePath)
 				}
 				else if (strcmp(&cBffHead[0], "END_CHARACTERSET") == 0)
 				{//モデルのデータ読み取り終了
+					//セットモーションオブジェクト
+					nMotionNum = CMotionParts::CreateMotionObj(pMotiondata, nSettingCompletionParts);
+
+					if (pMotiondata != nullptr)
+					{
+						delete[] pMotiondata;
+						pMotiondata = nullptr;
+					}
+
 					break;
 				}
 
@@ -639,95 +651,157 @@ int CRead::ReadMotion(char * sXFilePath)
 
 			}
 		}
-		//else if (strcmp(&cBffHead[0], "MOTIONSET") == 0)
-		//{//モーション用のデータ読み取り
-		//	int nSetMotionEnd = 0;//使った配列の数のカウント
-		//	int nMotionKey = 0;//使ったキーの数のカウント
-		//					   //モデルセットに必要な情報読み取りループ処理
-		//	while (fgets(cBff, LINE_MAX_READING_LENGTH, pFile) != NULL)
-		//	{
-		//		//文字列の分析
-		//		sscanf(cBff, "%s", &cBffHead);
+		else if (strcmp(&cBffHead[0], "MOTIONSET") == 0)
+		{//モーション用のデータ読み取り
+			MotionMoveData MotionMoveData;
+			MotionMoveData.pMotionKeyData = nullptr;
 
-		//		if (strcmp(&cBffHead[0], "LOOP") == 0)
-		//		{//このモーションはループ再生するかどうか
-		//		 //文字列の分析
-		//			sscanf(cBff, "%s = %d", &cBffHead, &);
-		//		}
-		//		else if (strcmp(&cBffHead[0], "NUM_KEY") == 0)
-		//		{//モーションのキー数
-		//		 //文字列の分析
-		//			sscanf(cBff, "%s = %d", &cBffHead, &);
-		//		}
-		//		else if (strcmp(&cBffHead[0], "KEYSET") == 0)
-		//		{//モデルパーツのモーション設定
-		//			int nModelPasCnt = 0;		//モデルパーツのセット番号
-		//										//モデルセットに必要な情報読み取りループ処理
-		//			while (fgets(cBff, LINE_MAX_READING_LENGTH, pFile) != NULL)
-		//			{
-		//				//文字列の分析
-		//				sscanf(cBff, "%s", &cBffHead);
+			int nMotionKeyMax = 0;
+			int nMotionKey = 0;//使ったキーの数のカウント
+			//モデルセットに必要な情報読み取りループ処理
+			while (fgets(cBff, LINE_MAX_READING_LENGTH, pFile) != NULL)
+			{
+				//文字列の分析
+				sscanf(cBff, "%s", &cBffHead);
 
-		//				if (strcmp(&cBffHead[0], "FRAME") == 0)
-		//				{//このモーションは何フレーム数で再生するかチェック
-		//				 //文字列の分析
-		//					sscanf(cBff, "%s = %d", &cBffHead, &);
-		//					if ( == 0)
-		//					{//再生フレーム数が0の場合1にする
-		//						 = 1;
-		//					}
-		//				}
-		//				else if (strcmp(&cBffHead[0], "KEY") == 0)
-		//				{//モーションの１パーツのセット
-		//				 //モデルセットに必要な情報読み取りループ処理
-		//					while (fgets(cBff, LINE_MAX_READING_LENGTH, pFile) != NULL)
-		//					{
-		//						//文字列の分析
-		//						sscanf(cBff, "%s", &cBffHead);
+				if (strcmp(&cBffHead[0], "LOOP") == 0)
+				{//このモーションはループ再生するかどうか
+				 //文字列の分析
+					int nLoop;
+					sscanf(cBff, "%s = %d", &cBffHead, &nLoop);
 
-		//						if (strcmp(&cBffHead[0], "POS") == 0)
-		//						{//モーション中の１パーツの位置
-		//						 //文字列の分析
-		//							sscanf(cBff, "%s = %f%f%f", &cBffHead,&,&,&);
-		//						}
-		//						else if (strcmp(&cBffHead[0], "ROT") == 0)
-		//						{//モーション中の１パーツの向き
-		//						 //文字列の分析
-		//							sscanf(cBff, "%s = %f%f%f", &cBffHead,&,&,&);
-		//						}
-		//						else if (strcmp(&cBffHead[0], "END_KEY") == 0)
-		//						{//モーション中の１パーツのセット終了
-		//							break;
-		//						}
+					if (nLoop != 0)
+					{
+						MotionMoveData.bLoop = true;
+					}
+				}
+				else if (strcmp(&cBffHead[0], "NUM_KEY") == 0)
+				{//モーションのキー数
+				 //文字列の分析
+					sscanf(cBff, "%s = %d", &cBffHead, &nMotionKeyMax);
 
-		//						//保存中の文字列の初期化
-		//						ZeroMemory(&cBff, sizeof(cBff));
-		//						ZeroMemory(&cBffHead, sizeof(cBffHead));
+					if (MotionMoveData.pMotionKeyData != nullptr)
+					{
+						assert(false);
+					}
+					MotionMoveData.nKeyMax = nMotionKeyMax;//キー数の保存
+					MotionMoveData.pMotionKeyData = new MotionKeyData[nMotionKeyMax];//キーごとに必要なデータの確保
 
-		//					}
-		//				}
-		//				else if (strcmp(&cBffHead[0], "END_KEYSET") == 0)
-		//				{
-		//					break;
-		//				}
+					for (int nKey = 0; nKey < nMotionKeyMax; nKey++)
+					{
+						//初期化
+						MotionMoveData.pMotionKeyData[nKey].pMotionPartsData = nullptr;
+					}
+				}
+				else if (strcmp(&cBffHead[0], "KEYSET") == 0)
+				{//モデルパーツのモーション設定
 
-		//				//保存中の文字列の初期化
-		//				ZeroMemory(&cBff, sizeof(cBff));
-		//				ZeroMemory(&cBffHead, sizeof(cBffHead));
 
-		//			}
-		//		}
-		//		else if (strcmp(&cBffHead[0], "END_MOTIONSET") == 0)
-		//		{//モデルパーツのモーション設定終了
-		//			break;
-		//		}
+					//パーツごとに必要な情報を確保
+					if (MotionMoveData.pMotionKeyData[nMotionKey].pMotionPartsData != nullptr)
+					{
+						assert(false);
+					}
+					MotionMoveData.pMotionKeyData[nMotionKey].pMotionPartsData = new MotionPartsData[nSettingCompletionParts];
 
-		//		//保存中の文字列の初期化
-		//		ZeroMemory(&cBff, sizeof(cBff));
-		//		ZeroMemory(&cBffHead, sizeof(cBffHead));
+					
 
-		//	}
-		//}
+					int nModelPasCnt = 0;		//モデルパーツのセット番号
+
+					//モデルセットに必要な情報読み取りループ処理
+					while (fgets(cBff, LINE_MAX_READING_LENGTH, pFile) != NULL)
+					{
+						//文字列の分析
+						sscanf(cBff, "%s", &cBffHead);
+
+						if (strcmp(&cBffHead[0], "FRAME") == 0)
+						{//このモーションは何フレーム数で再生するかチェック
+						 //文字列の分析
+							int nFrame = 0;
+							sscanf(cBff, "%s = %d", &cBffHead, &nFrame);
+							if (nFrame == 0)
+							{//再生フレーム数が0の場合1にする
+								nFrame = 1;
+							}
+							MotionMoveData.pMotionKeyData[nMotionKey].nFrame = nFrame;
+						}
+						else if (strcmp(&cBffHead[0], "KEY") == 0)
+						{//モーションの１パーツのセット
+						 //モデルセットに必要な情報読み取りループ処理
+							while (fgets(cBff, LINE_MAX_READING_LENGTH, pFile) != NULL)
+							{
+								//文字列の分析
+								sscanf(cBff, "%s", &cBffHead);
+
+								if (strcmp(&cBffHead[0], "POS") == 0)
+								{//モーション中の１パーツの位置
+								 //文字列の分析
+									D3DXVECTOR3 pos;
+									sscanf(cBff, "%s = %f%f%f", &cBffHead,&pos.x,&pos.y,&pos.z);
+
+									MotionMoveData.pMotionKeyData[nMotionKey].pMotionPartsData[nModelPasCnt].pos = pos;
+								}
+								else if (strcmp(&cBffHead[0], "ROT") == 0)
+								{//モーション中の１パーツの向き
+								 //文字列の分析
+									D3DXVECTOR3 rot;
+									sscanf(cBff, "%s = %f%f%f", &cBffHead, &rot.x, &rot.y, &rot.z);
+
+									MotionMoveData.pMotionKeyData[nMotionKey].pMotionPartsData[nModelPasCnt].rot = rot;
+								}
+								else if (strcmp(&cBffHead[0], "END_KEY") == 0)
+								{//モーション中の１パーツのセット終了
+									nModelPasCnt++;//１パーツのセット終了
+									break;
+								}
+
+								//保存中の文字列の初期化
+								ZeroMemory(&cBff, sizeof(cBff));
+								ZeroMemory(&cBffHead, sizeof(cBffHead));
+
+							}
+						}
+						else if (strcmp(&cBffHead[0], "END_KEYSET") == 0)
+						{
+							nMotionKey++;//設定したキー数のカウント
+							break;
+						}
+
+						//保存中の文字列の初期化
+						ZeroMemory(&cBff, sizeof(cBff));
+						ZeroMemory(&cBffHead, sizeof(cBffHead));
+
+					}
+				}
+				else if (strcmp(&cBffHead[0], "END_MOTIONSET") == 0)
+				{//モデルパーツのモーション設定終了
+					//モーションの登録
+					CMotionParts::SetMotionFileData(MotionMoveData, nMotionNum);
+
+					for (int nCnt = 0; nCnt < nMotionKey; nCnt++)
+					{
+						if (MotionMoveData.pMotionKeyData[nCnt].pMotionPartsData != nullptr)
+						{
+							delete[] MotionMoveData.pMotionKeyData[nCnt].pMotionPartsData;
+							MotionMoveData.pMotionKeyData[nCnt].pMotionPartsData = nullptr;
+						}
+					}
+
+					if (MotionMoveData.pMotionKeyData != nullptr)
+					{
+						delete[] MotionMoveData.pMotionKeyData;
+						MotionMoveData.pMotionKeyData = nullptr;
+					}
+
+					break;
+				}
+
+				//保存中の文字列の初期化
+				ZeroMemory(&cBff, sizeof(cBff));
+				ZeroMemory(&cBffHead, sizeof(cBffHead));
+
+			}
+		}
 		else if (strcmp(&cBffHead[0], "END_SCRIPT") == 0)
 		{//テキストファイルを読み切った時
 			break;
@@ -741,17 +815,12 @@ int CRead::ReadMotion(char * sXFilePath)
 
 
 
-	//セットモーションオブジェクト
-	int nMotionNum = CMotionParts::CreateMotionObj(pMotiondata, nSettingCompletionParts);
+	
 
 	//ファイルを閉じる
 	fclose(pFile);
 
-	if (pMotiondata != nullptr)
-	{
-		delete[] pMotiondata;
-		pMotiondata = nullptr;
-	}
+	
 
 	if (pMotionIndex != nullptr)
 	{

@@ -16,13 +16,34 @@
 // 構造定義
 //*****************************************************************************
 // 構造体
-struct MotionData
+struct MotionData//モーションの構造
 {
 	int nModelPattern;//使用するモデルのインデック
 	int nParentNum;//親の番号
 	D3DXVECTOR3 pos;//親からの位置
 	D3DXVECTOR3 rot;//親からの向き
+};
 
+// モーションパーツのデータ
+struct MotionPartsData
+{//パーツごと
+	D3DXVECTOR3 pos;
+	D3DXVECTOR3 rot;
+};
+
+//モーションキー一つ分のデータ
+struct MotionKeyData
+{//キーごと
+	MotionPartsData* pMotionPartsData;//パーツ分必要
+	int nFrame;
+};
+
+// モーション動きのデータ
+struct MotionMoveData
+{//モーションごと
+	MotionKeyData* pMotionKeyData;//キー分必要
+	int nKeyMax;
+	bool bLoop;
 };
 
 //*****************************************************************************
@@ -40,16 +61,16 @@ public:
 	// 構造体
 	struct KEY
 	{
-		D3DXVECTOR3 pos;
-		D3DXVECTOR3 rot;
+		int nFrame;//現在のキーの始まりから終わりまでにかかるフレーム数
+		D3DXVECTOR3 pos;//現在のキーの始まりから終わりの位置
+		D3DXVECTOR3 rot;//現在のキーの始まりから終わりの向き
 	};
 
 	struct KEY_SET
 	{
-		int nFrame[MAX_KEY];
-		KEY aKey[MAX_KEY];
-		int nKeyMax;
-		bool bLoop;
+		KEY* pKey;//キーの最大値分必要
+		int nKeyMax;//キーの最大
+		bool bLoop;//現在のモーションをループ再生するか
 	};
 
 	CMotionParts();
@@ -67,6 +88,7 @@ public:
 	void SetNextMotionParts(CMotionParts* pNextMotionParts) { m_pNextMotionParts = pNextMotionParts; }
 	void SetLastTimeMotionParts(CMotionParts* pLastTimeMotionParts) { m_pLastTimeMotionParts = pLastTimeMotionParts; }
 	void SetMotion(int nMotionNum);
+	void SetMotionData(KEY_SET KeyData);//実際の動きの登録
 	
 	void SetPartsNum(int nPartsNum) { m_nPartsNum = nPartsNum; }
 	void NextMotionPosition();
@@ -89,11 +111,13 @@ public:
 	static void MoveMotionModel(D3DXVECTOR3 pos, D3DXVECTOR3 rot,int nMotionNum);//モーションモデルの移動
 	static void SetLight(D3DXVECTOR3 vec, int nMotionNum);//モーションモデルのライトベクトル
 	static void AllSetShadowPos(D3DXVECTOR3 pos, int nMotionNum);//影の設定
+	static void SetMotionFileData(const MotionMoveData MotionMoveData, int nMotionNum);//モーションの登録
 private:
 	static CMotionParts* m_pMotionPartsTop;//リスト構造の初め
 	static CMotionParts* m_pMotionPartsCurrent;//リスト構造の終わり
 	static int m_nModelMax;//登録した動く物体の数
-	static int m_MotionPlayMotonNum[MAX_MOTION_ALL];//今再生中のモーション番号
+	static int m_nMotionPlayMotonNum[MAX_MOTION_ALL];//今再生中のモーション番号
+	static int m_nMotionRegistrationNum[MAX_MOTION_ALL];//登録したモーションモデル群のモーションの登録数
 	CMotionParts* m_pNextMotionParts;
 	CMotionParts* m_pLastTimeMotionParts;
 
