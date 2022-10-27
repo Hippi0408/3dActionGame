@@ -17,6 +17,7 @@ CMotionParts *CMotionParts::m_pMotionPartsTop = nullptr;
 CMotionParts *CMotionParts::m_pMotionPartsCurrent = nullptr;
 int CMotionParts::m_nModelMax = 0;
 int CMotionParts::m_nMotionPlayMotonNum[MAX_MOTION_ALL] = {};
+int CMotionParts::m_nMotionDestMotonNum[MAX_MOTION_ALL] = {};
 int CMotionParts::m_nMotionRegistrationNum[MAX_MOTION_ALL] = {};
 //*****************************************************************************
 // コンストラクタ
@@ -90,7 +91,7 @@ void CMotionParts::Uninit()
 		m_pNextMotionParts->SetLastTimeMotionParts(m_pLastTimeMotionParts);
 	}
 
-	for (int nMotion = 0; nMotion < 1; nMotion++)
+	for (int nMotion = 0; nMotion < m_nMotionRegistrationNum[m_nModelObjNum]; nMotion++)
 	{
 		if (m_MotionKey[nMotion].pKey != nullptr)
 		{
@@ -118,6 +119,9 @@ void CMotionParts::Update()
 	// 目的のフレーム　＜　現在のフレーム
 	if (nObjectiveFrame < m_nFrame)
 	{
+		m_nKey++;
+		//キー数の確認
+		KeyCheck();
 		// 次の位置までの計算
 		NextMotionPosition();
 		m_nFrame = 0;
@@ -185,7 +189,9 @@ void CMotionParts::SetMotion(int nMotionNum)
 {
 	m_nFrame = 0;
 	m_nKey = 0;
+	D3DXVECTOR3 pos = m_MotionKey[nMotionNum].pKey[m_nKey].pos;
 	D3DXVECTOR3 rot = m_MotionKey[nMotionNum].pKey[m_nKey].rot;
+	SetPosMove(pos);
 	SetRot(rot);
 }
 
@@ -194,9 +200,42 @@ void CMotionParts::SetMotion(int nMotionNum)
 //*****************************************************************************
 void CMotionParts::SetMotionData(KEY_SET KeyData)
 {
-	m_MotionKey[0].bLoop = KeyData.bLoop;
-	m_MotionKey[0].nKeyMax = KeyData.nKeyMax;
-	m_MotionKey[0].pKey = KeyData.pKey;
+	m_MotionKey[m_nMotionRegistrationNum[m_nModelObjNum]].bLoop = KeyData.bLoop;
+	m_MotionKey[m_nMotionRegistrationNum[m_nModelObjNum]].nKeyMax = KeyData.nKeyMax;
+	m_MotionKey[m_nMotionRegistrationNum[m_nModelObjNum]].pKey = KeyData.pKey;
+}
+
+//*****************************************************************************
+// キー数の確認
+//*****************************************************************************
+void CMotionParts::KeyCheck()
+{
+	//目的のキー数
+	int nDestKey = m_MotionKey[m_nMotionPlayMotonNum[m_nModelObjNum]].nKeyMax;
+
+	//キーが規定より多い場合リセット
+	if (m_nKey >= nDestKey)
+	{
+		m_nKey = 0;
+
+		//今のモーション番号
+		int nNowMotionNum = m_nMotionPlayMotonNum[m_nModelObjNum];
+		//次のモーション番号
+		//int nDestMotionNum = m_nMotionDestMotonNum[m_nModelObjNum];
+		//今のモーションがループするかどうか
+		if (!m_MotionKey[nNowMotionNum].bLoop)
+		{
+			//このパーツがモデル群の末端かどうか
+			//if (GetMotionPartsPointer(m_nModelObjNum, m_nPartsNum + 1) == nullptr)
+			if (m_nPartsNum == 0)
+			{
+				nNowMotionNum = 0;
+				m_nMotionPlayMotonNum[m_nModelObjNum] = nNowMotionNum;
+			}
+			SetMotion(nNowMotionNum);
+		}
+
+	}
 }
 
 //*****************************************************************************
@@ -206,9 +245,9 @@ void CMotionParts::NextMotionPosition()
 {
 	D3DXVECTOR3 nowPos, nextPos,nowRot, nextRot;
 	int nFrameRatio;
-
+	//目的のキー数
 	int nDestKey = m_MotionKey[m_nMotionPlayMotonNum[m_nModelObjNum]].nKeyMax;
-
+	
 	//現在のKEYが目的を超えたら
 	if (m_nKey >= nDestKey - 1)
 	{
@@ -237,8 +276,6 @@ void CMotionParts::NextMotionPosition()
 		nFrameRatio = m_MotionKey[m_nMotionPlayMotonNum[m_nModelObjNum]].pKey[m_nKey + 1].nFrame;
 	}
 	
-	
-
 	//1フレームあたりの動く向き
 	D3DXVECTOR3 rotMove;
 	//1フレームあたりの動く位置
@@ -262,14 +299,26 @@ void CMotionParts::NextMotionPosition()
 	m_RotMove = rotMove;
 
 	//キーのカウントを進める
-	m_nKey++;
+	//m_nKey++;
+}
 
-	//キーが規定より多い場合リセット
-	if (m_nKey >= nDestKey)
+//*****************************************************************************
+//全部のパーツ次の位置までの計算
+//*****************************************************************************
+void CMotionParts::AllNextMotionPosition()
+{
+	CMotionParts* pMotionParts = m_pMotionPartsTop;
+
+	while (pMotionParts != nullptr)
 	{
-		m_nKey = 0;
+		CMotionParts* pMotionPartsNext = pMotionParts->GetNextMotionParts();
+		pMotionParts->KeyFrameReset();
+		pMotionParts->NextMotionPosition();
+		int nModelObjNum = pMotionParts->GetModelObjNum();
+		pMotionParts->SetMotion(m_nMotionPlayMotonNum[nModelObjNum]);
+		pMotionParts = pMotionPartsNext;
 	}
-	
+
 }
 
 //*****************************************************************************
@@ -411,10 +460,17 @@ CMotionParts * CMotionParts::GetMotionPartsPointer(int nMotionNum, int nPartsNum
 //*****************************************************************************
 //モーションモデルの移動
 //*****************************************************************************
-void CMotionParts::MoveMotionModel(D3DXVECTOR3 pos, D3DXVECTOR3 rot, int nMotionNum)
+void CMotionParts::MoveMotionModel(D3DXVECTOR3 pos, D3DXVECTOR3 rot, int nModelNum, int nMotionNum)
 {
-	GetMotionPartsPointer(nMotionNum, 0)->SetParentPos(pos);
-	GetMotionPartsPointer(nMotionNum, 0)->SetParentRot(rot);
+	if (m_nMotionPlayMotonNum[nModelNum] != nMotionNum)
+	{
+		m_nMotionPlayMotonNum[nModelNum] = nMotionNum;
+		//全体の次までの位置の計算
+		AllNextMotionPosition();
+	}
+
+	GetMotionPartsPointer(nModelNum, 0)->SetParentPos(pos);
+	GetMotionPartsPointer(nModelNum, 0)->SetParentRot(rot);
 }
 
 //*****************************************************************************
@@ -486,12 +542,10 @@ void CMotionParts::SetMotionFileData(const MotionMoveData MotionMoveData, int nM
 		//登録
 		pMotionParts->SetMotionData(KeySet);
 
-		//pMotionParts->SetPos(INIT_POS);
-		pMotionParts->SetMotion(0);
-
-
 		nPartsNum++;//カウンターを進める
 		pMotionParts = GetMotionPartsPointer(nMotionNum, nPartsNum);//条件に合うポインタの獲得
 	}
 	
+	//モーションの登録完了数
+	m_nMotionRegistrationNum[nMotionNum]++;
 }

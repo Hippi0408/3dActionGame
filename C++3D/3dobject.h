@@ -67,6 +67,7 @@ public:
 	void SetParentPos(D3DXVECTOR3 pos) { m_Model.posParent = pos; }
 	void SetParentRot(D3DXVECTOR3 rot) { m_Model.rotParent = rot; }
 	void AddParentPos(D3DXVECTOR3 add) { m_Model.posParent += add; }
+	void SetPosMove(D3DXVECTOR3 pos) { m_Model.posMove = pos; }
 	D3DXVECTOR3 GetPosMove() { return m_Model.posMove; }
 	void AddPosMove(D3DXVECTOR3 add) { m_Model.posMove += add; }
 	void AddPos(D3DXVECTOR3 add) { m_Model.pos += add; }

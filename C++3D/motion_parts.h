@@ -53,8 +53,8 @@ class CMotionParts : public C3DObject
 {
 private:
 	static const D3DXVECTOR3 INIT_POS;
-	static const int MAX_MOTION = 1;
-	static const int MAX_KEY = 10;
+	static const int MAX_MOTION = 8;
+	static const int MAX_KEY = 12;
 	static const int MAX_MOTION_ALL = 4;
 public:
 
@@ -89,9 +89,14 @@ public:
 	void SetLastTimeMotionParts(CMotionParts* pLastTimeMotionParts) { m_pLastTimeMotionParts = pLastTimeMotionParts; }
 	void SetMotion(int nMotionNum);
 	void SetMotionData(KEY_SET KeyData);//実際の動きの登録
-	
+	void KeyFrameReset() { m_nKey = 0; m_nFrame = 0; }
+
+	int GetModelObjNum() { return m_nModelObjNum; }
+
 	void SetPartsNum(int nPartsNum) { m_nPartsNum = nPartsNum; }
-	void NextMotionPosition();
+	void KeyCheck();//キー数の確認
+	void NextMotionPosition();//次の位置までの計算
+	static void AllNextMotionPosition();//全部のパーツ次の位置までの計算
 	void SetMotionRarent(CMotionParts* pMotionRarent) { m_pRarent = pMotionRarent; }
 	bool GetMotionParts(int nMotionNum, int nPartsNum);//引数との一致があるかどうか
 	bool GetMotionParts(int nMotionNum);//引数との一致があるかどうか
@@ -108,7 +113,7 @@ public:
 	static int CreateMotionObj(MotionData* pMotionData,int nPartsMax);//動くOBJの生成
 	static CMotionParts* GetMotionPartsPointer(int nMotionNum, int nPartsNum);
 
-	static void MoveMotionModel(D3DXVECTOR3 pos, D3DXVECTOR3 rot,int nMotionNum);//モーションモデルの移動
+	static void MoveMotionModel(D3DXVECTOR3 pos, D3DXVECTOR3 rot,int nModelNum, int nMotionNum = 0);//モーションモデルの移動
 	static void SetLight(D3DXVECTOR3 vec, int nMotionNum);//モーションモデルのライトベクトル
 	static void AllSetShadowPos(D3DXVECTOR3 pos, int nMotionNum);//影の設定
 	static void SetMotionFileData(const MotionMoveData MotionMoveData, int nMotionNum);//モーションの登録
@@ -117,6 +122,7 @@ private:
 	static CMotionParts* m_pMotionPartsCurrent;//リスト構造の終わり
 	static int m_nModelMax;//登録した動く物体の数
 	static int m_nMotionPlayMotonNum[MAX_MOTION_ALL];//今再生中のモーション番号
+	static int m_nMotionDestMotonNum[MAX_MOTION_ALL];//次再生モーション番号
 	static int m_nMotionRegistrationNum[MAX_MOTION_ALL];//登録したモーションモデル群のモーションの登録数
 	CMotionParts* m_pNextMotionParts;
 	CMotionParts* m_pLastTimeMotionParts;

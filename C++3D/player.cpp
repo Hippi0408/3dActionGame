@@ -164,7 +164,14 @@ void CPlayer::Update()
 		CMotionParts::AllSetShadowPos(groundpos, m_nMotionNum);
 	}
 
-	CMotionParts::MoveMotionModel(GetPos(),GetRot(),m_nMotionNum);
+	if (pInput->Press(KEY_MOVE) || pInput->Press(DIK_0))
+	{
+		CMotionParts::MoveMotionModel(GetPos(), GetRot(), m_nMotionNum,1);
+	}
+	else
+	{
+		CMotionParts::MoveMotionModel(GetPos(), GetRot(), m_nMotionNum,1);
+	}
 	
 }
 
