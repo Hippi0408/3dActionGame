@@ -249,12 +249,50 @@ void C3DObject::CalculationMatrix()
 
 	D3DXMatrixMultiply(&m_Model.mtxWorld, &m_Model.mtxWorld, &mtxRot);
 
+	D3DXVECTOR3 pos = m_Model.pos + m_Model.posMove;
 	//位置の反映
-	D3DXMatrixTranslation(&mtxTrans, m_Model.pos.x, m_Model.pos.y, m_Model.pos.z);
+	D3DXMatrixTranslation(&mtxTrans, pos.x, pos.y, pos.z);
 	D3DXMatrixMultiply(&m_Model.mtxWorld, &m_Model.mtxWorld, &mtxTrans);
 
 	//モデルのマトリックス　＊　親のワールドマトリックス
 	D3DXMatrixMultiply(&m_Model.mtxWorld, &m_Model.mtxWorld, &mtxRoot);
+}
+
+//*****************************************************************************
+// ROTの正規化
+//*****************************************************************************
+D3DXVECTOR3 C3DObject::NormalizationRot(D3DXVECTOR3 In)
+{
+	D3DXVECTOR3 rot = In;
+
+	if (rot.x >= D3DX_PI)
+	{
+		rot.x -= D3DX_PI * 2;
+	}
+	else if (rot.x <= -D3DX_PI)
+	{
+		rot.x += D3DX_PI * 2;
+	}
+
+	if (rot.y >= D3DX_PI)
+	{
+		rot.y -= D3DX_PI * 2;
+	}
+	else if (rot.y <= -D3DX_PI)
+	{
+		rot.y += D3DX_PI * 2;
+	}
+
+	if (rot.z >= D3DX_PI)
+	{
+		rot.z -= D3DX_PI * 2;
+	}
+	else if (rot.z <= -D3DX_PI)
+	{
+		rot.z += D3DX_PI * 2;
+	}
+
+	return rot;
 }
 
 //*****************************************************************************

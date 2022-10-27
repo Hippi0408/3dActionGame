@@ -123,37 +123,15 @@ void CMotionParts::Update()
 		m_nFrame = 0;
 	}
 
+	// posの加算
+	AddPosMove(m_PosMove);
 	// rotの加算
 	AddRot(m_RotMove);
 
 	D3DXVECTOR3 rot = GetRot();
 
-	if (rot.x >= D3DX_PI)
-	{
-		rot.x -= D3DX_PI * 2;
-	}
-	else if (rot.x <= -D3DX_PI)
-	{
-		rot.x += D3DX_PI * 2;
-	}
-
-	if (rot.y >= D3DX_PI)
-	{
-		rot.y -= D3DX_PI * 2;
-	}
-	else if (rot.y <= -D3DX_PI)
-	{
-		rot.y += D3DX_PI * 2;
-	}
-	
-	if (rot.z >= D3DX_PI)
-	{
-		rot.z -= D3DX_PI * 2;
-	}
-	else if (rot.z <= -D3DX_PI)
-	{
-		rot.z += D3DX_PI * 2;
-	}
+	//正規化
+	rot = NormalizationRot(rot);
 
 	SetRot(rot);
 }
@@ -226,7 +204,7 @@ void CMotionParts::SetMotionData(KEY_SET KeyData)
 //*****************************************************************************
 void CMotionParts::NextMotionPosition()
 {
-	D3DXVECTOR3 nowRot, nextRot;
+	D3DXVECTOR3 nowPos, nextPos,nowRot, nextRot;
 	int nFrameRatio;
 
 	int nDestKey = m_MotionKey[m_nMotionPlayMotonNum[m_nModelObjNum]].nKeyMax;
@@ -234,6 +212,10 @@ void CMotionParts::NextMotionPosition()
 	//現在のKEYが目的を超えたら
 	if (m_nKey >= nDestKey - 1)
 	{
+		//今の位置
+		nowPos = GetPosMove();
+		//次の位置
+		nextPos = m_MotionKey[m_nMotionPlayMotonNum[m_nModelObjNum]].pKey[0].pos;
 		//今の向き
 		nowRot = GetRot();
 		//次の向き
@@ -243,6 +225,10 @@ void CMotionParts::NextMotionPosition()
 	}
 	else
 	{
+		//今の位置
+		nowPos = GetPosMove();
+		//次の位置
+		nextPos = m_MotionKey[m_nMotionPlayMotonNum[m_nModelObjNum]].pKey[m_nKey + 1].pos;
 		//今の向き
 		nowRot = GetRot();
 		//次の向き
@@ -253,43 +239,32 @@ void CMotionParts::NextMotionPosition()
 	
 	
 
-	//1フレームあたりの動く量
+	//1フレームあたりの動く向き
 	D3DXVECTOR3 rotMove;
+	//1フレームあたりの動く位置
+	D3DXVECTOR3 posMove;
 	
+	//目的の位置　ー　現在の位置
+	D3DXVECTOR3 pos = nextPos - nowPos;
 
-	D3DXVECTOR3 rot = (nextRot - nowRot);
+	//目的の向き　ー　現在の向き
+	D3DXVECTOR3 rot = nextRot - nowRot;
 
-	if (rot.x >= D3DX_PI)
-	{
-		rot.x -= D3DX_PI * 2;
-	}
-	else if (rot.x <= -D3DX_PI)
-	{
-		rot.x += D3DX_PI * 2;
-	}
+	//正規化
+	rot = NormalizationRot(rot);
 
-	if (rot.y >= D3DX_PI)
-	{
-		rot.y -= D3DX_PI * 2;
-	}
-	else if (rot.y <= -D3DX_PI)
-	{
-		rot.y += D3DX_PI * 2;
-	}
-
-	if (rot.z >= D3DX_PI)
-	{
-		rot.z -= D3DX_PI * 2;
-	}
-	else if (rot.z <= -D3DX_PI)
-	{
-		rot.z += D3DX_PI * 2;
-	}
-
+	//割合計算
+	//位置
+	posMove = pos / nFrameRatio;
+	m_PosMove = posMove;
+	//向き
 	rotMove = rot / nFrameRatio;
 	m_RotMove = rotMove;
 
+	//キーのカウントを進める
 	m_nKey++;
+
+	//キーが規定より多い場合リセット
 	if (m_nKey >= nDestKey)
 	{
 		m_nKey = 0;

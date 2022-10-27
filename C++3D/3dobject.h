@@ -45,7 +45,7 @@ public:
 		D3DXVECTOR3 pos;					//位置
 		D3DXVECTOR3 move;					//移動
 		D3DXVECTOR3 vtxMin, vtxMax;			//モデルのサイズ
-		
+		D3DXVECTOR3 posMove;				//位置動く時用
 		int nPattn;							//モデルのパターン
 	}Model;
 
@@ -66,6 +66,9 @@ public:
 	D3DXVECTOR3 GetParentRot() { return m_Model.rotParent; }
 	void SetParentPos(D3DXVECTOR3 pos) { m_Model.posParent = pos; }
 	void SetParentRot(D3DXVECTOR3 rot) { m_Model.rotParent = rot; }
+	void AddParentPos(D3DXVECTOR3 add) { m_Model.posParent += add; }
+	D3DXVECTOR3 GetPosMove() { return m_Model.posMove; }
+	void AddPosMove(D3DXVECTOR3 add) { m_Model.posMove += add; }
 	void AddPos(D3DXVECTOR3 add) { m_Model.pos += add; }
 	void AddRot(D3DXVECTOR3 add) { m_Model.rot += add; }
 	void SetSize(float fSize) { m_fSize = fSize; }
@@ -78,6 +81,7 @@ public:
 	D3DXVECTOR3 GetSize();
 	void SetModelPattnNum(int nPattnNum) { m_Model.nPattn = nPattnNum; }
 	void CalculationMatrix();
+	D3DXVECTOR3 NormalizationRot(D3DXVECTOR3 In);
 	static int SetModel(ModelPattern *pModel);
 	static void UninitAllModel();
 
