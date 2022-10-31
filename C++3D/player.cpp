@@ -170,7 +170,7 @@ void CPlayer::Update()
 	}
 	else
 	{
-		CMotionParts::MoveMotionModel(GetPos(), GetRot(), m_nMotionNum,1);
+		CMotionParts::MoveMotionModel(GetPos(), GetRot(), m_nMotionNum,0);
 	}
 	
 }

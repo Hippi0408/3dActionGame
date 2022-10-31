@@ -119,11 +119,10 @@ void CMotionParts::Update()
 	// 目的のフレーム　＜　現在のフレーム
 	if (nObjectiveFrame < m_nFrame)
 	{
-		m_nKey++;
-		//キー数の確認
-		KeyCheck();
 		// 次の位置までの計算
 		NextMotionPosition();
+		//キー数の確認
+		KeyCheck();
 		m_nFrame = 0;
 	}
 
@@ -270,10 +269,12 @@ void CMotionParts::NextMotionPosition()
 		nextPos = m_MotionKey[m_nMotionPlayMotonNum[m_nModelObjNum]].pKey[m_nKey + 1].pos;
 		//今の向き
 		nowRot = GetRot();
-		//次の向き
-		nextRot = m_MotionKey[m_nMotionPlayMotonNum[m_nModelObjNum]].pKey[m_nKey + 1].rot;
+		
 		//全体フレーム数に対しての割合
 		nFrameRatio = m_MotionKey[m_nMotionPlayMotonNum[m_nModelObjNum]].pKey[m_nKey + 1].nFrame;
+
+		//次の向き
+		nextRot = m_MotionKey[m_nMotionPlayMotonNum[m_nModelObjNum]].pKey[m_nKey + 1].rot;
 	}
 	
 	//1フレームあたりの動く向き
@@ -299,7 +300,7 @@ void CMotionParts::NextMotionPosition()
 	m_RotMove = rotMove;
 
 	//キーのカウントを進める
-	//m_nKey++;
+	m_nKey++;
 }
 
 //*****************************************************************************
@@ -311,11 +312,13 @@ void CMotionParts::AllNextMotionPosition()
 
 	while (pMotionParts != nullptr)
 	{
+
 		CMotionParts* pMotionPartsNext = pMotionParts->GetNextMotionParts();
+
 		pMotionParts->KeyFrameReset();
 		pMotionParts->NextMotionPosition();
 		int nModelObjNum = pMotionParts->GetModelObjNum();
-		pMotionParts->SetMotion(m_nMotionPlayMotonNum[nModelObjNum]);
+
 		pMotionParts = pMotionPartsNext;
 	}
 

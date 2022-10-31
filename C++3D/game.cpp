@@ -23,6 +23,8 @@
 #include "meshfield.h"
 #include "motion_parts.h"
 
+int g_nCnt = 0;
+
 //*****************************************************************************
 // コンストラクタ
 //*****************************************************************************
@@ -229,7 +231,11 @@ void CGame::Update()
 	effect.bAddColor = true;
 	//CEffect::CreateEffect(effect);
 
-	CMotionParts::ALLUpdate();
+	/*g_nCnt++;
+	if (g_nCnt % 2 == 0)
+	{*/
+		CMotionParts::ALLUpdate();
+	//}
 
 	if (pInput->Trigger(KEY_DECISION))
 	{
