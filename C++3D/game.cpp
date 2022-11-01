@@ -22,6 +22,7 @@
 #include "effect.h"
 #include "meshfield.h"
 #include "motion_parts.h"
+#include "read.h"
 
 int g_nCnt = 0;
 
@@ -107,6 +108,11 @@ HRESULT CGame::Init()
 
 	CEffect::InitTextIndex();
 
+	CRead cRead;
+
+	g_nCnt = cRead.ReadMotion("data/MOTION/motionblock.txt");
+
+	CMotionParts::SetLight(m_pLight->GetLightVec(), g_nCnt);
 	return S_OK;
 }
 
@@ -172,11 +178,14 @@ void CGame::Update()
 	m_pPlayer->Update();
 	CInput *pInput = CInput::GetKey();
 
+	CMotionParts::MoveMotionModel(D3DXVECTOR3(300.0f, 100.0f, -500.0f), D3DXVECTOR3(0.0f, 0.0f, 0.0f), g_nCnt, 0);
+
+	CMotionParts::AllSetShadowPos(D3DXVECTOR3(300.0f, 50.0f, -500.0f), g_nCnt);
 
 	if (pInput->Press(DIK_UP))
 	{
 		m_pCamera->AddPosV(D3DXVECTOR3(0.0f, 0.0f, 5.0f));
-		m_pCamera->AddPosR(D3DXVECTOR3(0.0f,0.0f,5.0f));
+		m_pCamera->AddPosR(D3DXVECTOR3(0.0f, 0.0f, 5.0f));
 	}
 	else if (pInput->Press(DIK_DOWN))
 	{
@@ -216,6 +225,30 @@ void CGame::Update()
 		m_pCamera->AddPosV(D3DXVECTOR3(0.0f, -5.0f, 0.0f));
 	}
 
+
+	if (pInput->Press(DIK_T))
+	{
+		m_pCamera->AddPosV(D3DXVECTOR3(0.0f, 0.0f, 5.0f));
+		//m_pCamera->AddPosR(D3DXVECTOR3(0.0f, 0.0f, 5.0f));
+	}
+	else if (pInput->Press(DIK_G))
+	{
+		m_pCamera->AddPosV(D3DXVECTOR3(0.0f, 0.0f, -5.0f));
+		//m_pCamera->AddPosR(D3DXVECTOR3(0.0f, 0.0f, -5.0f));
+	}
+
+	if (pInput->Press(DIK_F))
+	{
+		m_pCamera->AddPosV(D3DXVECTOR3(-5.0f, 0.0f, 0.0f));
+		//m_pCamera->AddPosR(D3DXVECTOR3(-5.0f, 0.0f, 0.0f));
+	}
+	else if (pInput->Press(DIK_H))
+	{
+		m_pCamera->AddPosV(D3DXVECTOR3(5.0f, 0.0f, 0.0f));
+		//m_pCamera->AddPosR(D3DXVECTOR3(5.0f, 0.0f, 0.0f));
+	}
+
+
 	D3DXVECTOR3 Ppos = m_pPlayer->GetPos();
 
 	Effect effect;
@@ -231,11 +264,8 @@ void CGame::Update()
 	effect.bAddColor = true;
 	//CEffect::CreateEffect(effect);
 
-	/*g_nCnt++;
-	if (g_nCnt % 2 == 0)
-	{*/
-		CMotionParts::ALLUpdate();
-	//}
+
+	CMotionParts::ALLUpdate();
 
 	if (pInput->Trigger(KEY_DECISION))
 	{

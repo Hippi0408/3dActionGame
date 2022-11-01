@@ -96,7 +96,7 @@ public:
 	void SetPartsNum(int nPartsNum) { m_nPartsNum = nPartsNum; }
 	void KeyCheck();//キー数の確認
 	void NextMotionPosition();//次の位置までの計算
-	static void AllNextMotionPosition();//全部のパーツ次の位置までの計算
+	static void AllNextMotionPosition(int nMotionNum);//全部のパーツ次の位置までの計算
 	void SetMotionRarent(CMotionParts* pMotionRarent) { m_pRarent = pMotionRarent; }
 	bool GetMotionParts(int nMotionNum, int nPartsNum);//引数との一致があるかどうか
 	bool GetMotionParts(int nMotionNum);//引数との一致があるかどうか
@@ -117,6 +117,8 @@ public:
 	static void SetLight(D3DXVECTOR3 vec, int nMotionNum);//モーションモデルのライトベクトル
 	static void AllSetShadowPos(D3DXVECTOR3 pos, int nMotionNum);//影の設定
 	static void SetMotionFileData(const MotionMoveData MotionMoveData, int nMotionNum);//モーションの登録
+	static D3DXVECTOR3 AllCollision(int nMotionNum,D3DXVECTOR3 pos);//当たり判定（自分のモデル番号、自分の位置）
+
 private:
 	static CMotionParts* m_pMotionPartsTop;//リスト構造の初め
 	static CMotionParts* m_pMotionPartsCurrent;//リスト構造の終わり

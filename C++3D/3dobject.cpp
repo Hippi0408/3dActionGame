@@ -44,6 +44,18 @@ HRESULT C3DObject::Init()
 //*****************************************************************************
 void C3DObject::Uninit()
 {
+	if (m_Model.pTopPos != nullptr)
+	{
+		delete[] m_Model.pTopPos;
+		m_Model.pTopPos = nullptr;
+	}
+
+	if(m_Model.pNormalPolygon != nullptr)
+	{
+		delete[] m_Model.pNormalPolygon;
+		m_Model.pNormalPolygon = nullptr;
+	}
+
 }
 
 //*****************************************************************************
@@ -51,6 +63,7 @@ void C3DObject::Uninit()
 //*****************************************************************************
 void C3DObject::Update()
 {
+
 }
 
 //*****************************************************************************
@@ -149,6 +162,19 @@ void C3DObject::Draw()
 	//保存していたマテリアルを戻す
 	pD3DDevice->SetMaterial(&matDef);
 
+
+	if (m_Model.pNormalPolygon == nullptr)
+	{
+		//法線の設定
+		SetNormal();
+	}
+	else
+	{
+		//法線の更新
+		UpdateNormal();
+	}
+	
+
 }
 
 //*****************************************************************************
@@ -215,6 +241,9 @@ void C3DObject::Set3DObject(int nPattn, D3DXVECTOR3 pos)
 
 	//頂点アンロック
 	m_ModelPattern[m_Model.nPattn].pMeshModel->UnlockVertexBuffer();
+
+	//法線の設定
+	SetNormal();
 }
 
 //*****************************************************************************
@@ -265,34 +294,251 @@ D3DXVECTOR3 C3DObject::NormalizationRot(D3DXVECTOR3 In)
 {
 	D3DXVECTOR3 rot = In;
 
-	if (rot.x >= D3DX_PI)
+	if (rot.x > D3DX_PI)
 	{
-		rot.x -= D3DX_PI * 2;
+		rot.x -= D3DX_PI * 2.0f;
 	}
-	else if (rot.x <= -D3DX_PI)
+	else if (rot.x < -D3DX_PI)
 	{
-		rot.x += D3DX_PI * 2;
-	}
-
-	if (rot.y >= D3DX_PI)
-	{
-		rot.y -= D3DX_PI * 2;
-	}
-	else if (rot.y <= -D3DX_PI)
-	{
-		rot.y += D3DX_PI * 2;
+		rot.x += D3DX_PI * 2.0f;
 	}
 
-	if (rot.z >= D3DX_PI)
+	if (rot.y > D3DX_PI)
 	{
-		rot.z -= D3DX_PI * 2;
+		rot.y -= D3DX_PI * 2.0f;
 	}
-	else if (rot.z <= -D3DX_PI)
+	else if (rot.y < -D3DX_PI)
 	{
-		rot.z += D3DX_PI * 2;
+		rot.y += D3DX_PI * 2.0f;
+	}
+
+	if (rot.z > D3DX_PI)
+	{
+		rot.z -= D3DX_PI * 2.0f;
+	}
+	else if (rot.z < -D3DX_PI)
+	{
+		rot.z += D3DX_PI * 2.0f;
 	}
 
 	return rot;
+}
+
+//*****************************************************************************
+//法線設定
+//*****************************************************************************
+void C3DObject::SetNormal()
+{
+	int nNumVix;		//頂点数
+	int nNumIndex;		//インデックス数
+	int nNumPolygon;	//ポリゴン数
+
+	DWORD sizeFVF;		//頂点フォーマットのサイズ
+	BYTE *pVtxBuff;		//頂点バッファへのポインタ
+	BYTE *pIndexBuff;	//インデックスバッファへのポインタ
+
+	//頂点数の取得
+	nNumVix = m_ModelPattern[m_Model.nPattn].pMeshModel->GetNumVertices();
+	//ポリゴン数の取得
+	nNumPolygon = m_ModelPattern[m_Model.nPattn].pMeshModel->GetNumFaces();
+	//インデクス数の取得
+	nNumIndex = nNumPolygon + 2;
+	
+	//頂点の設定
+	m_Model.pTopPos = new D3DXVECTOR3[nNumVix];
+
+	//法線の設定
+	m_Model.pNormalPolygon = new D3DXVECTOR3[nNumPolygon];
+
+	//頂点フォーマット取得
+	sizeFVF = D3DXGetFVFVertexSize(m_ModelPattern[m_Model.nPattn].pMeshModel->GetFVF());
+
+	//頂点ロック
+	m_ModelPattern[m_Model.nPattn].pMeshModel->LockVertexBuffer(D3DLOCK_READONLY, (void**)&pVtxBuff);
+
+
+	//すべての頂点POSの取得
+	for (int nCnt = 0; nCnt < nNumVix; nCnt++)
+	{
+		//頂点座標の取得
+		m_Model.pTopPos[nCnt] = *(D3DXVECTOR3*)pVtxBuff;
+		//頂点フォーマットのサイズ分ポインタを進める
+		pVtxBuff += sizeFVF;
+	}
+
+	//頂点アンロック
+	m_ModelPattern[m_Model.nPattn].pMeshModel->UnlockVertexBuffer();
+
+	//インデックスバッファのロック
+	m_ModelPattern[m_Model.nPattn].pMeshModel->LockIndexBuffer(D3DLOCK_READONLY, (void**)&pIndexBuff);
+
+	int nIndex1, nIndex2, nIndex3;
+	//法線の計算
+	for (int nCnt = 0; nCnt < nNumPolygon; nCnt++)
+	{
+		
+		nIndex1 = *(WORD*)pIndexBuff;
+		nIndex2 = *((WORD*)pIndexBuff + 1);
+		nIndex3 = *((WORD*)pIndexBuff + 2);
+
+		//頂点座標の代入
+		D3DXVECTOR3 vtx1 = m_Model.pTopPos[nIndex1];
+		D3DXVECTOR3 vtx2 = m_Model.pTopPos[nIndex2];
+		D3DXVECTOR3 vtx3 = m_Model.pTopPos[nIndex3];
+
+		D3DXVECTOR3 vec1, vec2, vecResult;
+
+		vec1 = vtx2 - vtx1;
+		vec2 = vtx3 - vtx1;
+
+		//外積
+		/*if (nCnt % 2 == 1)
+		{
+			D3DXVec3Cross(&vecResult, &vec2, &vec1);
+		}
+		else
+		{*/
+			D3DXVec3Cross(&vecResult, &vec1, &vec2);
+		//}
+		//正規化
+		D3DXVec3Normalize(&vecResult, &vecResult);
+
+		//面の法線ベクトルの保存
+		m_Model.pNormalPolygon[nCnt] = vecResult;
+
+		//データを進める
+		pIndexBuff+=sizeof(WORD)*3;
+	}
+
+	//インデックスバッファのアンロック
+	m_ModelPattern[m_Model.nPattn].pMeshModel->UnlockIndexBuffer();
+
+}
+
+//*****************************************************************************
+//法線の向きの更新
+//*****************************************************************************
+void C3DObject::UpdateNormal()
+{
+//	int nNumVix;		//頂点数
+//	D3DXVECTOR3 vec;
+//
+//	//頂点数の取得
+//	nNumVix = m_ModelPattern[m_Model.nPattn].pMeshModel->GetNumVertices();
+//
+//	//法線の更新
+//	for (int nCntVtx = 0; nCntVtx < nNumVix; nCntVtx++)
+//	{
+//		//法線ベクトルの一時保存
+//		vec = m_Model.pNormalPolygon[nCntVtx];
+//		//ワールドマトリックスを使った向き変換
+//		D3DXVec3TransformCoord(&vec,&vec, &m_Model.mtxWorld);
+//		//面の法線ベクトルの保存
+//		m_Model.pNormalPolygon[nCntVtx] = vec;
+//	}
+}
+
+//*****************************************************************************
+//当たり判定
+//*****************************************************************************
+D3DXVECTOR3 C3DObject::Collision(D3DXVECTOR3 pos)
+{
+	int nNumVix;		//頂点数
+	int nNumIndex;		//インデックス数
+	int nNumPolygon;	//ポリゴン数
+
+	BYTE *pIndexBuff;	//インデックスバッファへのポインタ
+
+	//頂点数の取得
+	nNumVix = m_ModelPattern[m_Model.nPattn].pMeshModel->GetNumVertices();
+	//ポリゴン数の取得
+	nNumPolygon = m_ModelPattern[m_Model.nPattn].pMeshModel->GetNumFaces();
+	//インデクス数の取得
+	nNumIndex = nNumPolygon + 2;
+
+	//インデックスバッファのロック
+	m_ModelPattern[m_Model.nPattn].pMeshModel->LockIndexBuffer(D3DLOCK_READONLY, (void**)&pIndexBuff);
+
+	int nIndex1, nIndex2, nIndex3;
+
+	D3DXVECTOR3 WorldPos = GetWorldPos();
+
+	//すべての頂点POSの取得
+	for (int nCnt = 0; nCnt < nNumPolygon; nCnt++)
+	{
+		//法線の取得
+		D3DXVECTOR3 Normal = m_Model.pNormalPolygon[nCnt];
+		////ワールドマトリックスとの掛け算
+		//D3DXVec3TransformCoord(&Normal,&Normal, &m_Model.mtxWorld);
+		////正規化
+		//D3DXVec3Normalize(&Normal, &Normal);
+
+		//法線が上向き斜めではなかった
+		if (Normal.y < 0.0f)
+		{
+			//データを進める
+			pIndexBuff += sizeof(WORD) * 3;
+			continue;
+		}
+
+		//インデックスから頂点番号の取得
+		nIndex1 = *(WORD*)pIndexBuff;
+		nIndex2 = *((WORD*)pIndexBuff + 1);
+		nIndex3 = *((WORD*)pIndexBuff + 2);
+
+		//頂点座標の代入
+		D3DXVECTOR3 vtx0 = WorldPos + m_Model.pTopPos[nIndex1];
+		D3DXVECTOR3 vtx1 = WorldPos + m_Model.pTopPos[nIndex2];
+		D3DXVECTOR3 vtx2 = WorldPos + m_Model.pTopPos[nIndex3];
+
+		D3DXVECTOR3 vec1, vec2;
+		float fInnerProduct0, fInnerProduct1, fInnerProduct2;
+
+		vec1 = vtx1 - vtx0;
+		vec2 = pos - vtx0;
+
+		fInnerProduct0 = vec1.x * vec2.z - vec1.z * vec2.x;
+
+		vec1 = vtx2 - vtx1;
+		vec2 = pos - vtx1;
+
+		fInnerProduct1 = vec1.x * vec2.z - vec1.z * vec2.x;
+
+		vec1 = vtx0 - vtx2;
+		vec2 = pos - vtx2;
+
+		fInnerProduct2 = vec1.x * vec2.z - vec1.z * vec2.x;
+
+		if (
+			(fInnerProduct0 >= 0.0f && fInnerProduct1 >= 0.0f && fInnerProduct2 >= 0.0f)
+			|| (fInnerProduct0 <= 0.0f && fInnerProduct1 <= 0.0f && fInnerProduct2 <= 0.0f)
+			)
+		{
+			D3DXVECTOR3 P1 = vtx0;
+
+			D3DXVECTOR3 vec = Normal;
+
+			float fPolygonY = P1.y - ((pos.x - P1.x) * vec.x + (pos.z - P1.z) * vec.z) / vec.y;
+
+			if (fPolygonY > pos.y)
+			{
+				//頂点アンロック
+				m_ModelPattern[m_Model.nPattn].pMeshModel->UnlockVertexBuffer();
+
+				return D3DXVECTOR3(pos.x, fPolygonY, pos.z);
+			}
+
+		}
+
+
+		//データを進める
+		pIndexBuff += sizeof(WORD) * 3;
+	}
+
+	//インデックスバッファのアンロック
+	m_ModelPattern[m_Model.nPattn].pMeshModel->UnlockIndexBuffer();
+
+	return D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 }
 
 //*****************************************************************************

@@ -813,10 +813,6 @@ int CRead::ReadMotion(char * sXFilePath)
 
 	}
 
-
-
-	
-
 	//ƒtƒ@ƒCƒ‹‚ð•Â‚¶‚é
 	fclose(pFile);
 

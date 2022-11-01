@@ -38,6 +38,8 @@ public:
 	//モデル構造体
 	typedef struct
 	{
+		D3DXVECTOR3* pNormalPolygon;		//面法線
+		D3DXVECTOR3* pTopPos;				//頂点の位置
 		D3DXMATRIX mtxWorld;				//ワールドマトリックス
 		D3DXVECTOR3 posParent;				//位置親
 		D3DXVECTOR3 rotParent;				//向き親
@@ -83,6 +85,10 @@ public:
 	void SetModelPattnNum(int nPattnNum) { m_Model.nPattn = nPattnNum; }
 	void CalculationMatrix();
 	D3DXVECTOR3 NormalizationRot(D3DXVECTOR3 In);
+	void SetNormal();			//法線設定
+	void UpdateNormal();		//法線の向きの更新
+	virtual D3DXVECTOR3 Collision(D3DXVECTOR3 pos);//当たり判定
+
 	static int SetModel(ModelPattern *pModel);
 	static void UninitAllModel();
 

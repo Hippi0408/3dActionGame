@@ -159,6 +159,11 @@ void CPlayer::Update()
 		}
 	}
 
+	if (pos.y < -100.0f)
+	{
+		SetPos(D3DXVECTOR3(pos.x, 0.0f, pos.z));
+	}
+
 	if (groundpos != D3DXVECTOR3(0.0f, 0.0f, 0.0f))
 	{
 		CMotionParts::AllSetShadowPos(groundpos, m_nMotionNum);
@@ -173,6 +178,10 @@ void CPlayer::Update()
 		CMotionParts::MoveMotionModel(GetPos(), GetRot(), m_nMotionNum,0);
 	}
 	
+
+	pos = CMotionParts::AllCollision(m_nMotionNum, GetPos());
+
+	SetPos(pos);
 }
 
 //*****************************************************************************
