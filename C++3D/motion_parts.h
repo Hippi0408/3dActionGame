@@ -117,7 +117,7 @@ public:
 	static void SetLight(D3DXVECTOR3 vec, int nMotionNum);//モーションモデルのライトベクトル
 	static void AllSetShadowPos(D3DXVECTOR3 pos, int nMotionNum);//影の設定
 	static void SetMotionFileData(const MotionMoveData MotionMoveData, int nMotionNum);//モーションの登録
-	static D3DXVECTOR3 AllCollision(int nMotionNum,D3DXVECTOR3 pos);//当たり判定（自分のモデル番号、自分の位置）
+	static D3DXVECTOR3 AllCollision(int nMotionNum,D3DXVECTOR3 pos, D3DXVECTOR3 oldpos);//当たり判定（自分のモデル番号、自分の位置）
 
 private:
 	static CMotionParts* m_pMotionPartsTop;//リスト構造の初め

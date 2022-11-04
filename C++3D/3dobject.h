@@ -41,6 +41,7 @@ public:
 		D3DXVECTOR3* pNormalPolygon;		//面法線
 		D3DXVECTOR3* pTopPos;				//頂点の位置
 		D3DXMATRIX mtxWorld;				//ワールドマトリックス
+		D3DXMATRIX mtxWorldRot;				//ワールドマトリックス(向きだけ)
 		D3DXVECTOR3 posParent;				//位置親
 		D3DXVECTOR3 rotParent;				//向き親
 		D3DXVECTOR3 rot;					//向き
@@ -78,6 +79,7 @@ public:
 	void SetLightVec(D3DXVECTOR3 LightVec) { m_LightVec = LightVec; }
 	void SetShadowPos(D3DXVECTOR3 shadowpos) { m_ShadowPos = shadowpos; }
 	D3DXVECTOR3 GetWorldPos();
+	D3DXVECTOR3 GetWorlMatrixRot();
 	D3DXVECTOR3 GetWorldRot();
 	D3DXMATRIX GetMatrix() { return m_Model.mtxWorld; }
 	void SetMatrix(D3DXMATRIX mtx) { m_Model.mtxWorld = mtx; }
@@ -87,7 +89,8 @@ public:
 	D3DXVECTOR3 NormalizationRot(D3DXVECTOR3 In);
 	void SetNormal();			//法線設定
 	void UpdateNormal();		//法線の向きの更新
-	virtual D3DXVECTOR3 Collision(D3DXVECTOR3 pos);//当たり判定
+	virtual D3DXVECTOR3 Collision(D3DXVECTOR3 pos, D3DXVECTOR3 oldpos);//当たり判定
+	bool TriangleInOut(D3DXVECTOR3 pos , D3DXVECTOR3 vtx1, D3DXVECTOR3 vtx2, D3DXVECTOR3 vtx3);//三角形の内にいるかどうか
 
 	static int SetModel(ModelPattern *pModel);
 	static void UninitAllModel();

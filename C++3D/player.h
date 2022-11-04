@@ -36,6 +36,8 @@ public:
 	void SetLight(D3DXVECTOR3 vec) { m_Light = vec; }
 
 private:
+	D3DXVECTOR3 m_Move;
+	D3DXVECTOR3 m_OldPos;
 	int m_nMotionNum;
 	D3DXVECTOR3 m_Light;
 };

@@ -563,7 +563,7 @@ void CMotionParts::SetMotionFileData(const MotionMoveData MotionMoveData, int nM
 //*****************************************************************************
 //当たり判定（自分のモデル番号、自分の位置）
 //*****************************************************************************
-D3DXVECTOR3 CMotionParts::AllCollision(int nMotionNum, D3DXVECTOR3 pos)
+D3DXVECTOR3 CMotionParts::AllCollision(int nMotionNum, D3DXVECTOR3 pos, D3DXVECTOR3 oldpos)
 {
 	CMotionParts* pMotionParts = m_pMotionPartsTop;
 
@@ -571,7 +571,7 @@ D3DXVECTOR3 CMotionParts::AllCollision(int nMotionNum, D3DXVECTOR3 pos)
 	{
 		if (!pMotionParts->GetMotionParts(nMotionNum))
 		{
-			D3DXVECTOR3 Add = pMotionParts->Collision(pos);
+			D3DXVECTOR3 Add = pMotionParts->Collision(pos, oldpos);
 			if (Add != D3DXVECTOR3(0.0f, 0.0f, 0.0f))
 			{
 				return Add;

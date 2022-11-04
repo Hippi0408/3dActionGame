@@ -37,6 +37,8 @@ CPlayer::~CPlayer()
 //*****************************************************************************
 HRESULT CPlayer::Init()
 {
+	m_Move = D3DXVECTOR3(0.0f,0.0f,0.0f);
+
 	if (FAILED(C3DObject::Init()))
 	{
 		return -1;
@@ -68,6 +70,14 @@ void CPlayer::Uninit()
 //*****************************************************************************
 void CPlayer::Update()
 {
+	//pos = ;
+
+
+	//SetPos(CMotionParts::AllCollision(m_nMotionNum, GetPos(), m_OldPos));
+
+
+	
+
 	CInput *pInput = CInput::GetKey();
 	CManager *pManager = GetManager();
 
@@ -82,52 +92,52 @@ void CPlayer::Update()
 	{//上キーが押された
 		if (pInput->Press(DIK_A))
 		{
-			add.x -= sinf(rotY + D3DX_PI * 0.75f);
-			add.z -= cosf(rotY + D3DX_PI * 0.75f);
+			add.x -= sinf(rotY + D3DX_PI * 0.75f) * 5.0f;
+			add.z -= cosf(rotY + D3DX_PI * 0.75f) * 5.0f;
 		}
 		else if (pInput->Press(DIK_D))
 		{
-			add.x -= sinf(rotY + D3DX_PI * -0.75f);
-			add.z -= cosf(rotY + D3DX_PI * -0.75f);
+			add.x -= sinf(rotY + D3DX_PI * -0.75f) * 5.0f;
+			add.z -= cosf(rotY + D3DX_PI * -0.75f) * 5.0f;
 		}
 		else
 		{
-			add.x += sinf(rotY);
-			add.z += cosf(rotY);
+			add.x += sinf(rotY) * 5.0f;
+			add.z += cosf(rotY) * 5.0f;
 		}
 	}
 	else if (pInput->Press(DIK_S))
 	{//下キーが押された
 		if (pInput->Press(DIK_A))
 		{
-			add.x -= sinf(rotY + D3DX_PI * 0.25f);
-			add.z -= cosf(rotY + D3DX_PI * 0.25f);
+			add.x -= sinf(rotY + D3DX_PI * 0.25f) * 5.0f;
+			add.z -= cosf(rotY + D3DX_PI * 0.25f) * 5.0f;
 		}
 		else if (pInput->Press(DIK_D))
 		{
-			add.x -= sinf(rotY + D3DX_PI * -0.25f);
-			add.z -= cosf(rotY + D3DX_PI * -0.25f);
+			add.x -= sinf(rotY + D3DX_PI * -0.25f) * 5.0f;
+			add.z -= cosf(rotY + D3DX_PI * -0.25f) * 5.0f;
 		}
 		else
 		{
-			add.x += sinf(rotY + D3DX_PI);
-			add.z += cosf(rotY + D3DX_PI);
+			add.x += sinf(rotY + D3DX_PI) * 5.0f;
+			add.z += cosf(rotY + D3DX_PI) * 5.0f;
 		}
 	}
 	else if (pInput->Press(DIK_A))
 	{//左キーが押された
-		add.x += sinf(rotY + D3DX_PI * -0.5f);
-		add.z += cosf(rotY + D3DX_PI * -0.5f);
+		add.x += sinf(rotY + D3DX_PI * -0.5f) * 5.0f;
+		add.z += cosf(rotY + D3DX_PI * -0.5f) * 5.0f;
 	}
 	else if (pInput->Press(DIK_D))
 	{//右キーが押された
-		add.x += sinf(rotY + D3DX_PI * 0.5f);
-		add.z += cosf(rotY + D3DX_PI * 0.5f);
+		add.x += sinf(rotY + D3DX_PI * 0.5f) * 5.0f;
+		add.z += cosf(rotY + D3DX_PI * 0.5f) * 5.0f;
 	}
 
 	if (pInput->Trigger(DIK_SPACE))
 	{
-		AddPos(D3DXVECTOR3(0.0f,100.0f,0.0f));
+		m_Move.y += 100;
 	}
 
 	if (pInput->Press(DIK_Z))
@@ -139,12 +149,19 @@ void CPlayer::Update()
 		AddRot(D3DXVECTOR3(0.0f, D3DXToRadian(10), 0.0f));
 	}
 
-	AddPos(add * 5.0f);
+	m_Move.y -= 4.0f;
 
-	add.y = -4.0f;
+	m_Move.y += (0.0f - m_Move.y) * 0.1f;
+
+	//OldPosの更新
+	m_OldPos = GetPos();
+
+
+	AddPos(m_Move);
 
 	AddPos(add);
 
+	
 	D3DXVECTOR3 pos, groundpos;
 
 	pos = GetPos();
@@ -164,6 +181,8 @@ void CPlayer::Update()
 		SetPos(D3DXVECTOR3(pos.x, 0.0f, pos.z));
 	}
 
+	
+
 	if (groundpos != D3DXVECTOR3(0.0f, 0.0f, 0.0f))
 	{
 		CMotionParts::AllSetShadowPos(groundpos, m_nMotionNum);
@@ -178,10 +197,18 @@ void CPlayer::Update()
 		CMotionParts::MoveMotionModel(GetPos(), GetRot(), m_nMotionNum,0);
 	}
 	
+	
 
-	pos = CMotionParts::AllCollision(m_nMotionNum, GetPos());
+	pos = CMotionParts::AllCollision(m_nMotionNum, GetPos(), m_OldPos);
+
+	if (pos != GetPos())
+	{
+		m_Move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	}
 
 	SetPos(pos);
+	
+	
 }
 
 //*****************************************************************************

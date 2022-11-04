@@ -251,9 +251,10 @@ void C3DObject::Set3DObject(int nPattn, D3DXVECTOR3 pos)
 //*****************************************************************************
 void C3DObject::CalculationMatrix()
 {
+	
 	D3DXMATRIX mtxRoot;					//元の親のワールドマトリックス
 	D3DXMATRIX mtxRot, mtxTrans, mtxScaling;		//計算用のマトリックス
-	
+	D3DXMATRIX mtxRotParent, mtxRotChild;
 
 	//ワールドマトリックスの初期化（元の親）
 	D3DXMatrixIdentity(&mtxRoot);
@@ -266,6 +267,9 @@ void C3DObject::CalculationMatrix()
 	D3DXMatrixRotationYawPitchRoll(&mtxRot, m_Model.rotParent.y, m_Model.rotParent.x, m_Model.rotParent.z);
 	D3DXMatrixMultiply(&mtxRoot, &mtxRoot, &mtxRot);
 
+	//ワールドマトリックス向きだけの保存
+	mtxRotParent = mtxRot;
+
 	//位置の反映
 	D3DXMatrixTranslation(&mtxTrans, m_Model.posParent.x, m_Model.posParent.y, m_Model.posParent.z);
 	D3DXMatrixMultiply(&mtxRoot, &mtxRoot, &mtxTrans);
@@ -275,8 +279,10 @@ void C3DObject::CalculationMatrix()
 
 	//向きを反映
 	D3DXMatrixRotationYawPitchRoll(&mtxRot, m_Model.rot.y, m_Model.rot.x, m_Model.rot.z);
-
 	D3DXMatrixMultiply(&m_Model.mtxWorld, &m_Model.mtxWorld, &mtxRot);
+
+	//ワールドマトリックス向きだけの保存
+	mtxRotChild = mtxRot;
 
 	D3DXVECTOR3 pos = m_Model.pos + m_Model.posMove;
 	//位置の反映
@@ -285,6 +291,10 @@ void C3DObject::CalculationMatrix()
 
 	//モデルのマトリックス　＊　親のワールドマトリックス
 	D3DXMatrixMultiply(&m_Model.mtxWorld, &m_Model.mtxWorld, &mtxRoot);
+
+	//モデルのマトリックス　＊　親のワールドマトリックス(向きだけ)
+	D3DXMatrixMultiply(&m_Model.mtxWorldRot, &mtxRotChild, &mtxRotParent);
+
 }
 
 //*****************************************************************************
@@ -441,7 +451,7 @@ void C3DObject::UpdateNormal()
 //*****************************************************************************
 //当たり判定
 //*****************************************************************************
-D3DXVECTOR3 C3DObject::Collision(D3DXVECTOR3 pos)
+D3DXVECTOR3 C3DObject::Collision(D3DXVECTOR3 pos, D3DXVECTOR3 oldpos)
 {
 	int nNumVix;		//頂点数
 	int nNumIndex;		//インデックス数
@@ -461,76 +471,81 @@ D3DXVECTOR3 C3DObject::Collision(D3DXVECTOR3 pos)
 
 	int nIndex1, nIndex2, nIndex3;
 
-	D3DXVECTOR3 WorldPos = GetWorldPos();
-
 	//すべての頂点POSの取得
 	for (int nCnt = 0; nCnt < nNumPolygon; nCnt++)
 	{
 		//法線の取得
 		D3DXVECTOR3 Normal = m_Model.pNormalPolygon[nCnt];
-		////ワールドマトリックスとの掛け算
-		//D3DXVec3TransformCoord(&Normal,&Normal, &m_Model.mtxWorld);
-		////正規化
-		//D3DXVec3Normalize(&Normal, &Normal);
-
-		//法線が上向き斜めではなかった
-		if (Normal.y < 0.0f)
-		{
-			//データを進める
-			pIndexBuff += sizeof(WORD) * 3;
-			continue;
-		}
+		//ワールドマトリックスとの掛け算
+		D3DXVec3TransformCoord(&Normal, &Normal, &m_Model.mtxWorldRot);
+		//正規化
+		D3DXVec3Normalize(&Normal, &Normal);
 
 		//インデックスから頂点番号の取得
 		nIndex1 = *(WORD*)pIndexBuff;
 		nIndex2 = *((WORD*)pIndexBuff + 1);
 		nIndex3 = *((WORD*)pIndexBuff + 2);
 
+		D3DXVECTOR3 vtx0, vtx1, vtx2;
 		//頂点座標の代入
-		D3DXVECTOR3 vtx0 = WorldPos + m_Model.pTopPos[nIndex1];
-		D3DXVECTOR3 vtx1 = WorldPos + m_Model.pTopPos[nIndex2];
-		D3DXVECTOR3 vtx2 = WorldPos + m_Model.pTopPos[nIndex3];
+		//ワールドマトリックスとの掛け算
+		D3DXVec3TransformCoord(&vtx0, &m_Model.pTopPos[nIndex1], &m_Model.mtxWorld);
+		D3DXVec3TransformCoord(&vtx1, &m_Model.pTopPos[nIndex2], &m_Model.mtxWorld);
+		D3DXVec3TransformCoord(&vtx2, &m_Model.pTopPos[nIndex3], &m_Model.mtxWorld);
 
-		D3DXVECTOR3 vec1, vec2;
-		float fInnerProduct0, fInnerProduct1, fInnerProduct2;
 
-		vec1 = vtx1 - vtx0;
-		vec2 = pos - vtx0;
+		//平面情報
+		D3DXPLANE Plane;
+		D3DXPlaneFromPointNormal(&Plane, &vtx0, &Normal);
 
-		fInnerProduct0 = vec1.x * vec2.z - vec1.z * vec2.x;
+		//交点
+		D3DXVECTOR3 IntersectionPos;
 
-		vec1 = vtx2 - vtx1;
-		vec2 = pos - vtx1;
+		//平面を突き抜ける直線の貫通点を取得
+		D3DXPlaneIntersectLine(&IntersectionPos, &Plane, &pos, &oldpos);
 
-		fInnerProduct1 = vec1.x * vec2.z - vec1.z * vec2.x;
-
-		vec1 = vtx0 - vtx2;
-		vec2 = pos - vtx2;
-
-		fInnerProduct2 = vec1.x * vec2.z - vec1.z * vec2.x;
-
-		if (
-			(fInnerProduct0 >= 0.0f && fInnerProduct1 >= 0.0f && fInnerProduct2 >= 0.0f)
-			|| (fInnerProduct0 <= 0.0f && fInnerProduct1 <= 0.0f && fInnerProduct2 <= 0.0f)
-			)
+		if (IntersectionPos == D3DXVECTOR3(0.0f, 0.0f, 0.0f))
 		{
-			D3DXVECTOR3 P1 = vtx0;
-
-			D3DXVECTOR3 vec = Normal;
-
-			float fPolygonY = P1.y - ((pos.x - P1.x) * vec.x + (pos.z - P1.z) * vec.z) / vec.y;
-
-			if (fPolygonY > pos.y)
-			{
-				//頂点アンロック
-				m_ModelPattern[m_Model.nPattn].pMeshModel->UnlockVertexBuffer();
-
-				return D3DXVECTOR3(pos.x, fPolygonY, pos.z);
-			}
-
+			continue;
 		}
 
 
+		D3DXVECTOR3 vec1 = pos - oldpos;
+		D3DXVECTOR3 vec2 = IntersectionPos - oldpos;
+
+		if (D3DXVec3Dot(&Normal, &vec1) >= 0.0f)
+		{
+			continue;
+		}
+
+		float fSize1 = D3DXVec3Length(&vec1);
+		float fSize2 = D3DXVec3Length(&vec2);
+
+		if (fSize1 > fSize2)
+		{
+			//三角形の内にいるかどうか
+			if (TriangleInOut(pos, vtx0, vtx1, vtx2))
+			{
+				D3DXVECTOR3 IntersectionPosVec1 = IntersectionPos - pos;
+				D3DXVECTOR3 IntersectionPosVec2 = IntersectionPos - oldpos;
+
+				D3DXVec3Normalize(&IntersectionPosVec1, &IntersectionPosVec1);
+				D3DXVec3Normalize(&IntersectionPosVec2, &IntersectionPosVec2);
+
+				D3DXVECTOR3 Criteria = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+				if (
+					((IntersectionPosVec1 > Criteria && IntersectionPosVec2 > Criteria)
+						|| (IntersectionPosVec1 < Criteria && IntersectionPosVec2 < Criteria))
+					)
+				{
+
+					D3DXVECTOR3 WallSlide = (vec1 - D3DXVec3Dot(&vec1, &Normal) * Normal) * 1.0f;
+
+					return IntersectionPos + WallSlide;
+
+				}
+			}
+		}
 		//データを進める
 		pIndexBuff += sizeof(WORD) * 3;
 	}
@@ -539,6 +554,64 @@ D3DXVECTOR3 C3DObject::Collision(D3DXVECTOR3 pos)
 	m_ModelPattern[m_Model.nPattn].pMeshModel->UnlockIndexBuffer();
 
 	return D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+}
+
+//*****************************************************************************
+//三角形の内にいるかどうか
+//*****************************************************************************
+bool C3DObject::TriangleInOut(D3DXVECTOR3 pos, D3DXVECTOR3 vtx0, D3DXVECTOR3 vtx1, D3DXVECTOR3 vtx2)
+{
+	D3DXVECTOR3 vec1, vec2;
+	float fInnerProduct0[3], fInnerProduct1[3], fInnerProduct2[3];
+
+	vec1 = vtx1 - vtx0;
+	vec2 = pos - vtx0;
+
+	fInnerProduct0[0] = vec1.x * vec2.z - vec1.z * vec2.x;
+	fInnerProduct0[1] = vec1.y * vec2.x - vec1.x * vec2.y;
+	fInnerProduct0[2] = vec1.z * vec2.y - vec1.y * vec2.z;
+
+	vec1 = vtx2 - vtx1;
+	vec2 = pos - vtx1;
+
+	fInnerProduct1[0] = vec1.x * vec2.z - vec1.z * vec2.x;
+	fInnerProduct1[1] = vec1.y * vec2.x - vec1.x * vec2.y;
+	fInnerProduct1[2] = vec1.z * vec2.y - vec1.y * vec2.z;
+
+	vec1 = vtx0 - vtx2;
+	vec2 = pos - vtx2;
+
+	fInnerProduct2[0] = vec1.x * vec2.z - vec1.z * vec2.x;
+	fInnerProduct2[1] = vec1.y * vec2.x - vec1.x * vec2.y;
+	fInnerProduct2[2] = vec1.z * vec2.y - vec1.y * vec2.z;
+
+
+	if (
+		(fInnerProduct0[0] > 0.0f && fInnerProduct1[0] > 0.0f && fInnerProduct2[0] > 0.0f)
+		|| (fInnerProduct0[0] < 0.0f && fInnerProduct1[0] < 0.0f && fInnerProduct2[0] < 0.0f)
+		)
+	{
+		return true;
+	}
+
+	if (
+		(fInnerProduct0[1] > 0.0f && fInnerProduct1[1] > 0.0f && fInnerProduct2[1] > 0.0f)
+		|| (fInnerProduct0[1] < 0.0f && fInnerProduct1[1] < 0.0f && fInnerProduct2[1] < 0.0f)
+		)
+	{
+		return true;
+	}
+
+	if (
+		(fInnerProduct0[2] > 0.0f && fInnerProduct1[2] > 0.0f && fInnerProduct2[2] > 0.0f)
+		|| (fInnerProduct0[2] < 0.0f && fInnerProduct1[2] < 0.0f && fInnerProduct2[2] < 0.0f)
+		)
+	{
+		return true;
+	}
+
+
+	return false;
 }
 
 //*****************************************************************************
@@ -603,6 +676,15 @@ D3DXVECTOR3 C3DObject::GetWorldPos()
 	pos.y = m_Model.mtxWorld._42;
 	pos.z = m_Model.mtxWorld._43;
 
+	return pos;
+}
+
+D3DXVECTOR3 C3DObject::GetWorlMatrixRot()
+{
+	D3DXVECTOR3 pos;
+	pos.x = m_Model.mtxWorldRot._41;
+	pos.y = m_Model.mtxWorldRot._42;
+	pos.z = m_Model.mtxWorldRot._43;
 	return pos;
 }
 

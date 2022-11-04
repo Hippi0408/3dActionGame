@@ -25,6 +25,8 @@
 #include "read.h"
 
 int g_nCnt = 0;
+int g_nCnt2 = 0;
+int g_nCnt3 = 0;
 
 //*****************************************************************************
 // コンストラクタ
@@ -111,6 +113,8 @@ HRESULT CGame::Init()
 	CRead cRead;
 
 	g_nCnt = cRead.ReadMotion("data/MOTION/motionblock.txt");
+	g_nCnt2 = cRead.ReadMotion("data/MOTION/motionblock.txt");
+	g_nCnt3 = cRead.ReadMotion("data/MOTION/motionblock.txt");
 
 	CMotionParts::SetLight(m_pLight->GetLightVec(), g_nCnt);
 	return S_OK;
@@ -178,7 +182,9 @@ void CGame::Update()
 	m_pPlayer->Update();
 	CInput *pInput = CInput::GetKey();
 
-	CMotionParts::MoveMotionModel(D3DXVECTOR3(300.0f, 100.0f, -500.0f), D3DXVECTOR3(0.0f, 0.0f, 0.0f), g_nCnt, 0);
+	CMotionParts::MoveMotionModel(D3DXVECTOR3(200.0f, 200.0f, -200.0f), D3DXVECTOR3(D3DX_PI, 0.0f, 0.0f), g_nCnt, 0);
+	CMotionParts::MoveMotionModel(D3DXVECTOR3(600.0f, 0.0f, -200.0f), D3DXVECTOR3(-D3DX_PI * 0.5f, -D3DX_PI * 0.1f, 0.0f), g_nCnt2, 0);
+	CMotionParts::MoveMotionModel(D3DXVECTOR3(1000.0f, 0.0f, -200.0f), D3DXVECTOR3(-D3DX_PI * 0.1f, -D3DX_PI * 0.1f, 0.0f), g_nCnt3, 0);
 
 	CMotionParts::AllSetShadowPos(D3DXVECTOR3(300.0f, 50.0f, -500.0f), g_nCnt);
 
